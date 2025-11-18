@@ -83,8 +83,19 @@ const mp3URL = 'https://xpanol.github.io/SAFARICHECK/001_es.mp3';
 const jsonURL = 'https://xpanol.github.io/SAFARICHECK/001_es.json';
 
 playBtn.addEventListener('click', async () => {
-  if (!audio.src) audio.src = mp3URL;
+  // pobieranie MP3 jako Blob przy pierwszym odtworzeniu
+  if (!audio.src) {
+    try {
+      const res = await fetch(mp3URL);
+      const blob = await res.blob();
+      audio.src = URL.createObjectURL(blob);
+    } catch (err) {
+      console.error('Błąd wczytywania MP3:', err);
+      return;
+    }
+  }
 
+  // wczytywanie JSON przy pierwszym kliknięciu
   if (!wordsLoaded) {
     try {
       const res = await fetch(jsonURL);
@@ -117,6 +128,7 @@ playBtn.addEventListener('click', async () => {
   audio.play().catch(err => console.warn('Safari zablokowało odtwarzanie:', err));
 });
 
+// podświetlanie słów w czasie odtwarzania
 audio.addEventListener('timeupdate', () => {
   karaokeDiv.querySelectorAll('.word').forEach(span => {
     const start = parseFloat(span.dataset.start);
