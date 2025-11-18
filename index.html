@@ -1,57 +1,71 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Safari Fix Audio</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Obejście blokady audio w Safari</title>
 <style>
-body {
-    background: #000;
-    color: #fff;
+  body {
     font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
     text-align: center;
-    padding-top: 100px;
-}
-button {
+    padding: 50px;
+  }
+  button {
+    background: #f6b511;
+    border: none;
+    padding: 16px 26px;
     font-size: 20px;
-    padding: 10px 20px;
+    border-radius: 10px;
     cursor: pointer;
-}
+    margin-bottom: 30px;
+  }
+  button:active { transform: translateY(1px); }
+  .highlight { color: #f6b511; transition: color 0.3s; }
 </style>
 </head>
-
 <body>
 
-<h2>Test audio Safari</h2>
+<h1>Safari Audio – obejście blokady</h1>
 
-<button id="playBtn">PLAY</button>
+<button id="playBtn">Play</button>
+<p id="text">To jest przykładowy tekst, który zostanie podświetlony podczas odtwarzania audio.</p>
 
-<audio id="audio"></audio>
+<audio id="audio" preload="auto"></audio>
 
 <script>
 const btn = document.getElementById('playBtn');
 const audio = document.getElementById('audio');
-let loaded = false;
+const text = document.getElementById('text');
+let isPlaying = false;
 
-btn.addEventListener('click', async () => {
-    if (!loaded) {
-        audio.src = '001_es.mp3';
-        try {
-            await audio.play();
-            loaded = true;
-            btn.textContent = 'PAUSE';
-        } catch(err) {
-            console.log('Safari block:', err);
-        }
-        return;
+btn.addEventListener('click', () => {
+  if (!isPlaying) {
+    // ustawiamy src dopiero przy kliknięciu
+    if (!audio.src) {
+      audio.src = 'https://xpanol.github.io/SAFARICHECK/001_es.mp3';
     }
 
-    if (audio.paused) {
-        audio.play();
-        btn.textContent = 'PAUSE';
-    } else {
-        audio.pause();
-        btn.textContent = 'PLAY';
-    }
+    audio.play()
+      .then(() => {
+        isPlaying = true;
+        btn.textContent = 'Pause';
+        text.classList.add('highlight');
+      })
+      .catch(err => console.log('Safari blokuje:', err));
+  } else {
+    audio.pause();
+    isPlaying = false;
+    btn.textContent = 'Play';
+    text.classList.remove('highlight');
+  }
+});
+
+audio.addEventListener('ended', () => {
+  isPlaying = false;
+  btn.textContent = 'Play';
+  text.classList.remove('highlight');
 });
 </script>
 
