@@ -1,91 +1,57 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Safari Audio z Web Audio API</title>
-
+<title>Safari Fix Audio</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #111;
+body {
+    background: #000;
     color: #fff;
+    font-family: Arial, sans-serif;
     text-align: center;
-    padding: 50px;
-  }
-
-  button {
-    background: #f6b511;
-    border: none;
-    padding: 16px 26px;
+    padding-top: 100px;
+}
+button {
     font-size: 20px;
-    border-radius: 10px;
+    padding: 10px 20px;
     cursor: pointer;
-    margin-bottom: 30px;
-  }
-
-  button:active {
-    transform: translateY(1px);
-  }
-
-  .highlight {
-    color: #f6b511;
-    transition: color 0.3s;
-  }
+}
 </style>
 </head>
+
 <body>
 
-<h1>Test audio z Web Audio API</h1>
+<h2>Test audio Safari</h2>
 
-<button id="playBtn">Play</button>
+<button id="playBtn">PLAY</button>
 
-<p id="text">To jest przykładowy tekst, który zostanie podświetlony podczas odtwarzania audio.</p>
+<audio id="audio"></audio>
 
 <script>
 const btn = document.getElementById('playBtn');
-const text = document.getElementById('text');
-
-let audioCtx;
-let bufferSource;
-let isPlaying = false;
+const audio = document.getElementById('audio');
+let loaded = false;
 
 btn.addEventListener('click', async () => {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-  if (!isPlaying) {
-    try {
-      // fetch pliku MP3 w momencie kliknięcia
-      const response = await fetch('https://xpanol.github.io/SAFARICHECK/001_es.mp3');
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-      bufferSource = audioCtx.createBufferSource();
-      bufferSource.buffer = audioBuffer;
-      bufferSource.connect(audioCtx.destination);
-      bufferSource.start(0);
-
-      bufferSource.onended = () => {
-        isPlaying = false;
-        btn.textContent = 'Play';
-        text.classList.remove('highlight');
-        bufferSource = null;
-      };
-
-      isPlaying = true;
-      btn.textContent = 'Pause';
-      text.classList.add('highlight');
-
-    } catch (err) {
-      console.log('Błąd odtwarzania audio:', err);
+    if (!loaded) {
+        audio.src = '001_es.mp3';
+        try {
+            await audio.play();
+            loaded = true;
+            btn.textContent = 'PAUSE';
+        } catch(err) {
+            console.log('Safari block:', err);
+        }
+        return;
     }
-  } else {
-    bufferSource.stop();
-    isPlaying = false;
-    btn.textContent = 'Play';
-    text.classList.remove('highlight');
-    bufferSource = null;
-  }
+
+    if (audio.paused) {
+        audio.play();
+        btn.textContent = 'PAUSE';
+    } else {
+        audio.pause();
+        btn.textContent = 'PLAY';
+    }
 });
 </script>
 
