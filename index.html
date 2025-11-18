@@ -2,126 +2,41 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Test Safari Audio + Karaoke</title>
-<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
-<style>
-  body {
-    font-family: 'Special Elite', monospace;
-    background-color: black;
-    color: white;
-    max-width: 1000px;
-    margin:50px auto;
-    padding: 20px;
-  }
-
-  .player {
-    margin-bottom: 40px;
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-  }
-
-  .word {
-    font-size: 28px;
-    padding: 2px;
-    transition: color 0.2s;
-  }
-
-  .highlight {
-    color: #F6B511;
-  }
-
-  .karaoke-line {
-    white-space: nowrap;
-    display: flex;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-
-  button {
-    font-family: 'Special Elite', monospace;
-    background: #F6B511;
-    border: 1px solid white;
-    color: white;
-    cursor: pointer;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    font-size: 22px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
-  }
-</style>
+<title>Test MP3 + JSON Safari</title>
 </head>
 <body>
+<h2>Test audio i JSON</h2>
 
-<div class="player">
-  <div>
-    <button id="playBtn">▶</button>
-    <audio id="audio001" preload="auto" playsinline></audio>
-  </div>
-  <div class="karaoke-line" id="karaoke001"></div>
-</div>
+<button id="playBtn">▶ Play</button>
+<audio id="audio001" preload="auto" playsinline></audio>
+<div id="text"></div>
 
 <script>
 const audio = document.getElementById('audio001');
 const playBtn = document.getElementById('playBtn');
-const karaokeDiv = document.getElementById('karaoke001');
-let wordsLoaded = false;
+const textDiv = document.getElementById('text');
+let dataLoaded = false;
+let data = [];
 
 playBtn.addEventListener('click', async () => {
-  // ustawiamy źródło audio tylko przy pierwszym kliknięciu
   if (!audio.src) audio.src = 'https://raw.githubusercontent.com/XPANOL/SAFARICHECK/main/001_es.mp3';
 
-  // ładujemy JSON dopiero przy pierwszym Play
-  if (!wordsLoaded) {
+  if (!dataLoaded) {
     try {
       const res = await fetch('https://raw.githubusercontent.com/XPANOL/SAFARICHECK/main/001_es.json');
-      const data = await res.json();
-
-      data.forEach(item => {
-        const words = item.text.split(' ');
-        const start = parseFloat(item.start.split(':').reduce((acc, t) => 60 * acc + +t));
-        const end = parseFloat(item.end.split(':').reduce((acc, t) => 60 * acc + +t));
-        const duration = end - start;
-        const wordDuration = duration / words.length;
-
-        words.forEach((word, j) => {
-          const span = document.createElement('span');
-          span.textContent = word + ' ';
-          span.dataset.start = (start + j * wordDuration).toFixed(2);
-          span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-          span.className = 'word';
-          karaokeDiv.appendChild(span);
-        });
-      });
-
-      wordsLoaded = true;
-    } catch (err) {
-      console.error('Błąd wczytywania JSON:', err);
+      data = await res.json();
+      textDiv.textContent = "JSON wczytany: " + JSON.stringify(data[0]);
+      dataLoaded = true;
+    } catch(e) {
+      textDiv.textContent = "Błąd wczytywania JSON: " + e;
+      console.error(e);
     }
   }
 
-  // odtwarzanie audio
   audio.currentTime = 0;
-  audio.play().catch(err => console.warn('Safari zablokowało odtwarzanie:', err));
-});
-
-// podświetlanie słów
-audio.addEventListener('timeupdate', () => {
-  karaokeDiv.querySelectorAll('.word').forEach(span => {
-    const start = parseFloat(span.dataset.start);
-    const end = parseFloat(span.dataset.end);
-    if (audio.currentTime >= start && audio.currentTime <= end) {
-      span.classList.add('highlight');
-    } else {
-      span.classList.remove('highlight');
-    }
-  });
+  audio.play().then(() => console.log("Audio started"))
+              .catch(err => console.warn("Error:", err));
 });
 </script>
-
 </body>
 </html>
