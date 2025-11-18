@@ -1,27 +1,38 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Player Test Safari/Chrome</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XPANOL Player Test</title>
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   body {
     font-family: 'Special Elite', monospace;
-    background: black;
+    background-color: black;
     color: white;
-    max-width: 800px;
+    max-width: 1000px;
     margin: 50px auto;
     padding: 20px;
+    text-align: center;
   }
 
-  h1 { text-align: center; margin-bottom: 30px; color: #F6B511; }
+  h1 {
+    color: #F6B511;
+    margin-bottom: 30px;
+  }
 
-  .player { margin-bottom: 40px; }
+  .player {
+    margin-bottom: 50px;
+  }
+
+  .karaoke-line {
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
 
   .word {
-    font-size: 24px;
-    padding: 2px;
-    transition: color 0.2s;
+    transition: color 0.12s ease;
   }
 
   .highlight {
@@ -29,23 +40,21 @@
     font-weight: bold;
   }
 
-  .audio-container {
+  .controls {
     display: flex;
+    justify-content: flex-start;
+    gap: 12px;
     align-items: center;
-    gap: 10px;
-    margin-top: 15px;
   }
 
   button {
-    font-family: 'Special Elite', monospace;
     background: #F6B511;
-    border: 1px solid white;
-    color: black;
-    cursor: pointer;
-    width: 50px;
-    height: 50px;
+    border: none;
     border-radius: 50%;
+    width: 45px;
+    height: 45px;
     font-size: 22px;
+    cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -55,72 +64,75 @@
 </head>
 <body>
 
-<h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
+<h1>XPANOL Player Test</h1>
 
-<div class="player">
-  <div id="karaoke"></div>
-
-  <div class="audio-container">
+<div class="player" id="player1">
+  <div class="karaoke-line" id="karaokeLine"></div>
+  <div class="controls">
     <button id="playBtn">▶</button>
   </div>
+  <audio id="audio" preload="auto" src="001_es.mp3"></audio>
 </div>
-
-<audio id="audio" src="001_es.mp3" preload="auto"></audio>
 
 <script>
 const audio = document.getElementById('audio');
 const playBtn = document.getElementById('playBtn');
-const karaokeDiv = document.getElementById('karaoke');
+const karaokeLine = document.getElementById('karaokeLine');
 
-let words = [];
-
-// Wczytanie JSON z tymi samymi wyrazami i czasami
-fetch('001_es.json')
-  .then(res => res.json())
-  .then(data => {
-    data.forEach(item => {
-      const span = document.createElement('span');
-      span.textContent = item.text + ' ';
-      span.dataset.start = item.start;
-      span.dataset.end = item.end;
-      span.className = 'word';
-      karaokeDiv.appendChild(span);
-      words.push(span);
-    });
-  })
-  .catch(err => console.error(err));
-
+let wordsData = [];
 let rafId = null;
 
+// Wczytanie JSON i wyrenderowanie spanów
+fetch('001_es.json')
+  .then(resp => resp.json())
+  .then(data => {
+    // przygotowanie danych
+    wordsData = data.map(item => {
+      const words = item.text.split(' ').map((w, i) => ({
+        text: w,
+        start: Number(item.start.split(':').reduce((acc,t)=>60*acc+Number(t))),
+        end: Number(item.end.split(':').reduce((acc,t)=>60*acc+Number(t)))
+      }));
+      return words;
+    }).flat();
+
+    // render spanów
+    karaokeLine.innerHTML = '';
+    wordsData.forEach((w, i) => {
+      const span = document.createElement('span');
+      span.textContent = w.text + ' ';
+      span.className = 'word';
+      span.dataset.start = w.start;
+      span.dataset.end = w.end;
+      karaokeLine.appendChild(span);
+    });
+  });
+
+// highlight loop
 function highlightLoop() {
   const t = audio.currentTime;
-  words.forEach(w => {
-    const start = parseFloat(w.dataset.start);
-    const end = parseFloat(w.dataset.end);
-    if (t >= start && t <= end) {
-      w.classList.add('highlight');
+  wordsData.forEach((w, i) => {
+    const span = karaokeLine.children[i];
+    if(t >= w.start && t <= w.end){
+      span.classList.add('highlight');
     } else {
-      w.classList.remove('highlight');
+      span.classList.remove('highlight');
     }
   });
   rafId = requestAnimationFrame(highlightLoop);
 }
 
+// Play/Pause button
 playBtn.addEventListener('click', () => {
-  if (audio.paused) {
-    audio.play().catch(err => console.error(err));
-    playBtn.textContent = '⏸';
-    if (!rafId) rafId = requestAnimationFrame(highlightLoop);
+  if(audio.paused){
+    audio.play();
+    playBtn.textContent = '❚❚';
+    if(!rafId) rafId = requestAnimationFrame(highlightLoop);
   } else {
     audio.pause();
     playBtn.textContent = '▶';
-    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   }
-});
-
-audio.addEventListener('ended', () => {
-  playBtn.textContent = '▶';
-  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 });
 </script>
 
