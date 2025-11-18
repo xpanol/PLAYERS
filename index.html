@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Safari Audio z podświetleniem</title>
+<title>Safari Audio z Web Audio API</title>
 
 <style>
   body {
@@ -36,43 +36,56 @@
 </head>
 <body>
 
-<h1>Test audio z podświetlaniem</h1>
-
-<!-- Audio z controls, dzięki czemu Safari Desktop odtwarza poprawnie -->
-<audio id="audio" controls preload="auto" src="https://xpanol.github.io/SAFARICHECK/001_es.mp3"></audio>
+<h1>Test audio z Web Audio API</h1>
 
 <button id="playBtn">Play</button>
 
 <p id="text">To jest przykładowy tekst, który zostanie podświetlony podczas odtwarzania audio.</p>
 
 <script>
-const audio = document.getElementById('audio');
 const btn = document.getElementById('playBtn');
 const text = document.getElementById('text');
+
+let audioCtx;
+let bufferSource;
 let isPlaying = false;
 
-btn.addEventListener('click', () => {
+btn.addEventListener('click', async () => {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
   if (!isPlaying) {
-    audio.play()
-      .then(() => {
-        isPlaying = true;
-        btn.textContent = 'Pause';
-        text.classList.add('highlight');
-      })
-      .catch(err => console.log('Safari blokuje:', err));
+    try {
+      // fetch pliku MP3 w momencie kliknięcia
+      const response = await fetch('https://xpanol.github.io/SAFARICHECK/001_es.mp3');
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+      bufferSource = audioCtx.createBufferSource();
+      bufferSource.buffer = audioBuffer;
+      bufferSource.connect(audioCtx.destination);
+      bufferSource.start(0);
+
+      bufferSource.onended = () => {
+        isPlaying = false;
+        btn.textContent = 'Play';
+        text.classList.remove('highlight');
+        bufferSource = null;
+      };
+
+      isPlaying = true;
+      btn.textContent = 'Pause';
+      text.classList.add('highlight');
+
+    } catch (err) {
+      console.log('Błąd odtwarzania audio:', err);
+    }
   } else {
-    audio.pause();
+    bufferSource.stop();
     isPlaying = false;
     btn.textContent = 'Play';
     text.classList.remove('highlight');
+    bufferSource = null;
   }
-});
-
-// Reset po zakończeniu audio
-audio.addEventListener('ended', () => {
-  isPlaying = false;
-  btn.textContent = 'Play';
-  text.classList.remove('highlight');
 });
 </script>
 
