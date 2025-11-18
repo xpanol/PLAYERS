@@ -3,135 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XPANOL Player Test</title>
-<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+<title>Safari Audio Test</title>
+
 <style>
   body {
-    font-family: 'Special Elite', monospace;
-    background-color: black;
-    color: white;
-    max-width: 1000px;
-    margin: 50px auto;
-    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
     text-align: center;
+    padding-top: 80px;
   }
-
-  h1 {
-    color: #F6B511;
-    margin-bottom: 30px;
-  }
-
-  .player {
-    margin-bottom: 50px;
-  }
-
-  .karaoke-line {
-    font-size: 24px;
-    margin-bottom: 20px;
-    text-align: left;
-  }
-
-  .word {
-    transition: color 0.12s ease;
-  }
-
-  .highlight {
-    color: #F6B511;
-    font-weight: bold;
-  }
-
-  .controls {
-    display: flex;
-    justify-content: flex-start;
-    gap: 12px;
-    align-items: center;
-  }
-
   button {
-    background: #F6B511;
+    background: #f6b511;
     border: none;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    font-size: 22px;
+    padding: 16px 26px;
+    font-size: 20px;
+    border-radius: 10px;
     cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
+  }
+  button:active {
+    transform: translateY(1px);
   }
 </style>
 </head>
 <body>
 
-<h1>XPANOL Player Test</h1>
+<h1>Test audio w Safari i Chrome</h1>
 
-<div class="player" id="player1">
-  <div class="karaoke-line" id="karaokeLine"></div>
-  <div class="controls">
-    <button id="playBtn">▶</button>
-  </div>
-  <audio id="audio" preload="auto" src="001_es.mp3"></audio>
-</div>
+<button id="playBtn">Play</button>
+
+<audio id="audio" preload="auto"></audio>
 
 <script>
+// wskazanie pliku mp3
 const audio = document.getElementById('audio');
-const playBtn = document.getElementById('playBtn');
-const karaokeLine = document.getElementById('karaokeLine');
+audio.src = '001_es.mp3';
 
-let wordsData = [];
-let rafId = null;
+// flagi stanu
+let audioReady = false;
 
-// Wczytanie JSON i wyrenderowanie spanów
-fetch('001_es.json')
-  .then(resp => resp.json())
-  .then(data => {
-    // przygotowanie danych
-    wordsData = data.map(item => {
-      const words = item.text.split(' ').map((w, i) => ({
-        text: w,
-        start: Number(item.start.split(':').reduce((acc,t)=>60*acc+Number(t))),
-        end: Number(item.end.split(':').reduce((acc,t)=>60*acc+Number(t)))
-      }));
-      return words;
-    }).flat();
+// Safari musi zameldować że dźwięk da się odtworzyć
+audio.addEventListener('canplaythrough', () => {
+  audioReady = true;
+  console.log('Audio gotowe do odtworzenia');
+});
 
-    // render spanów
-    karaokeLine.innerHTML = '';
-    wordsData.forEach((w, i) => {
-      const span = document.createElement('span');
-      span.textContent = w.text + ' ';
-      span.className = 'word';
-      span.dataset.start = w.start;
-      span.dataset.end = w.end;
-      karaokeLine.appendChild(span);
-    });
-  });
+// kliknięcie play = prawdziwa interakcja użytkownika
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (!audioReady) {
+    console.log('Safari jeszcze ładuje audio');
+    return;
+  }
 
-// highlight loop
-function highlightLoop() {
-  const t = audio.currentTime;
-  wordsData.forEach((w, i) => {
-    const span = karaokeLine.children[i];
-    if(t >= w.start && t <= w.end){
-      span.classList.add('highlight');
-    } else {
-      span.classList.remove('highlight');
-    }
-  });
-  rafId = requestAnimationFrame(highlightLoop);
-}
-
-// Play/Pause button
-playBtn.addEventListener('click', () => {
-  if(audio.paused){
-    audio.play();
-    playBtn.textContent = '❚❚';
-    if(!rafId) rafId = requestAnimationFrame(highlightLoop);
+  if (audio.paused) {
+    audio.play()
+      .then(() => console.log('Odtwarzanie działa'))
+      .catch(err => console.log('Safari blokuje:', err));
   } else {
     audio.pause();
-    playBtn.textContent = '▶';
-    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   }
 });
 </script>
