@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Safari Audio Test</title>
-
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -31,24 +30,93 @@
 <h1>Test audio w Safari i Chrome</h1>
 
 <button id="playBtn">Play</button>
-
-<audio id="audio"></audio>
+<audio id="audio" preload="none"></audio>
 
 <script>
-const audio = document.getElementById('audio');
-audio.src = '001_es.mp3';
+(function () {
+  const audio = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
 
-document.getElementById('playBtn').addEventListener('click', () => {
-  
-  // Safari wymaga załadowania dopiero po kliknięciu
-  audio.load();
+  // ścieżka do pliku - jeśli masz CDN/CORS, podaj pełny URL
+  const AUDIO_SRC = '001_es.mp3';
 
-  audio.play().then(() => {
-    console.log('Audio gra');
-  }).catch(err => {
-    console.log('Blokada w Safari:', err);
+  // flaga, żeby inicjalizacja wykonała się raz
+  let initialized = false;
+  let audioCtx = null;
+
+  // funkcja inicjalizująca i próbująca odtwarzania
+  async function initAndPlay() {
+    if (!initialized) {
+      // ustaw źródło dopiero przy interakcji - to często omija blokady Safari
+      audio.src = AUDIO_SRC;
+      audio.preload = 'auto';
+      initialized = true;
+      console.log('Ustawiono źródło audio:', AUDIO_SRC);
+    }
+
+    // jeśli element jest zmutowany przypadkowo - upewnij się, że nie jest
+    audio.muted = false;
+
+    try {
+      await audio.play();
+      console.log('audio.play() powiodło się');
+      playBtn.textContent = 'Pause';
+    } catch (err) {
+      console.warn('audio.play() został odrzucony:', err);
+
+      // Spróbuj wznowić AudioContext jeśli istnieje lub go utworzyć
+      try {
+        if (!audioCtx) {
+          // create AudioContext i podłącz media element jako fallback
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const source = audioCtx.createMediaElementSource(audio);
+          source.connect(audioCtx.destination);
+          console.log('Utworzono AudioContext i podłączono media element');
+        }
+        // resume musi zostać wykonane w gesturze użytkownika - tu już jesteśmy w gesturze
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+          console.log('AudioContext wznowiony');
+        }
+        // spróbuj ponownie odtwarzać
+        await audio.play();
+        console.log('audio.play() powiodło się po wznowieniu AudioContext');
+        playBtn.textContent = 'Pause';
+      } catch (err2) {
+        console.error('Nie udało się odtworzyć audio nawet po AudioContext:', err2);
+        // pokaż krótki komunikat użytkownikowi
+        playBtn.textContent = 'Play - błąd, sprawdź konsolę';
+      }
+    }
+  }
+
+  function togglePlay() {
+    if (audio.paused) {
+      initAndPlay();
+    } else {
+      audio.pause();
+      playBtn.textContent = 'Play';
+    }
+  }
+
+  // reaguj na różne eventy które liczą się jako gest użytkownika na iOS/Safari
+  ['click', 'pointerdown', 'touchend'].forEach(evt =>
+    playBtn.addEventListener(evt, (e) => {
+      // zapobiegaj wielokrotnej inicjalizacji w krótkim czasie
+      e.preventDefault();
+      togglePlay();
+    }, { passive: false })
+  );
+
+  // dodatkowe logi dla debugowania
+  audio.addEventListener('error', (e) => {
+    console.error('Błąd elementu audio:', e, audio.error);
   });
-});
+  audio.addEventListener('stalled', () => console.warn('audio stalled'));
+  audio.addEventListener('suspend', () => console.warn('audio suspend'));
+  audio.addEventListener('canplay', () => console.log('canplay'));
+  audio.addEventListener('canplaythrough', () => console.log('canplaythrough'));
+})();
 </script>
 
 </body>
