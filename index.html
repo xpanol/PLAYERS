@@ -32,16 +32,14 @@
 
 <button id="playBtn">Play</button>
 
-<audio id="audio" preload="auto"></audio>
+<!-- źródło ustawione w HTML -->
+<audio id="audio" preload="auto" src="001_es.mp3"></audio>
 
 <script>
 const audio = document.getElementById('audio');
-audio.src = '001_es.mp3'; // upewnij się, że plik jest w tym samym folderze co HTML
+const btn = document.getElementById('playBtn');
 
-document.getElementById('playBtn').addEventListener('click', () => {
-  // wymuś ponowne załadowanie, żeby Safari uznało interakcję za prawdziwą
-  audio.load();
-
+btn.addEventListener('click', () => {
   audio.play()
     .then(() => console.log('Odtwarzanie działa'))
     .catch(err => console.log('Safari blokuje:', err));
