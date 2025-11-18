@@ -32,36 +32,22 @@
 
 <button id="playBtn">Play</button>
 
-<audio id="audio" preload="auto"></audio>
+<audio id="audio"></audio>
 
 <script>
-// wskazanie pliku mp3
 const audio = document.getElementById('audio');
 audio.src = '001_es.mp3';
 
-// flagi stanu
-let audioReady = false;
-
-// Safari musi zameldować że dźwięk da się odtworzyć
-audio.addEventListener('canplaythrough', () => {
-  audioReady = true;
-  console.log('Audio gotowe do odtworzenia');
-});
-
-// kliknięcie play = prawdziwa interakcja użytkownika
 document.getElementById('playBtn').addEventListener('click', () => {
-  if (!audioReady) {
-    console.log('Safari jeszcze ładuje audio');
-    return;
-  }
+  
+  // Safari wymaga załadowania dopiero po kliknięciu
+  audio.load();
 
-  if (audio.paused) {
-    audio.play()
-      .then(() => console.log('Odtwarzanie działa'))
-      .catch(err => console.log('Safari blokuje:', err));
-  } else {
-    audio.pause();
-  }
+  audio.play().then(() => {
+    console.log('Audio gra');
+  }).catch(err => {
+    console.log('Blokada w Safari:', err);
+  });
 });
 </script>
 
