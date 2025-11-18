@@ -1,201 +1,127 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Lina-XPANOL-presentacion</title>
-
+<meta charset="UTF-8">
+<title>Player Test Safari/Chrome</title>
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
-
 <style>
-:root {
-  --highlight: #F6B511;
-  --font: "Special Elite", monospace;
-}
+  body {
+    font-family: 'Special Elite', monospace;
+    background: black;
+    color: white;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+  }
 
-body {
-  font-family: var(--font);
-  background:#000;
-  color:#fff;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:20px;
-  box-sizing:border-box;
-}
+  h1 { text-align: center; margin-bottom: 30px; color: #F6B511; }
 
-.app {
-  width:100%;
-  max-width:1000px;
-  text-align:center;
-}
+  .player { margin-bottom: 40px; }
 
-.line-box {
-  min-height:120px;
-  margin:0 auto 18px;
-  padding:18px;
-  background:rgba(0,0,0,0.25);
-  border-radius:10px;
-}
+  .word {
+    font-size: 24px;
+    padding: 2px;
+    transition: color 0.2s;
+  }
 
-.line {
-  font-size:24px;
-  line-height:1.45;
-  margin:12px 0;
-}
+  .highlight {
+    color: #F6B511;
+    font-weight: bold;
+  }
 
-.word { transition: color 0.12s ease; }
-.word.highlight { color: var(--highlight); font-weight:700; }
+  .audio-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+  }
 
-.controls {
-  display:flex;
-  gap:12px;
-  justify-content:center;
-  margin-top:6px;
-}
-
-.btn {
-  background:var(--highlight);
-  color:#000;
-  border:0;
-  padding:10px 16px;
-  border-radius:8px;
-  font-family:var(--font);
-  font-size:16px;
-  cursor:pointer;
-}
-
-.btn:active { transform:translateY(1px); }
+  button {
+    font-family: 'Special Elite', monospace;
+    background: #F6B511;
+    border: 1px solid white;
+    color: black;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+  }
 </style>
 </head>
 <body>
 
-<div class="app" role="application" aria-label="Karaoke">
-  <div class="line-box" id="lineBox" aria-live="polite"></div>
+<h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-  <div class="controls" role="toolbar">
-    <button class="btn" id="backBtn">Back</button>
-    <button class="btn" id="playBtn">Play</button>
-    <button class="btn" id="restartBtn">Restart</button>
+<div class="player">
+  <div id="karaoke"></div>
+
+  <div class="audio-container">
+    <button id="playBtn">▶</button>
   </div>
-
-  <!-- statyczny audio element -->
-  <audio id="audio" src="001_es.mp3" preload="auto"></audio>
 </div>
 
-<script>
-const JSON_FILE = '001_es.json';
-const audio = document.getElementById('audio');
-const lineBox = document.getElementById('lineBox');
-const playBtn = document.getElementById('playBtn');
-const backBtn = document.getElementById('backBtn');
-const restartBtn = document.getElementById('restartBtn');
+<audio id="audio" src="001_es.mp3" preload="auto"></audio>
 
-let lines = [];
-let currentBlockIndex = 0;
+<script>
+const audio = document.getElementById('audio');
+const playBtn = document.getElementById('playBtn');
+const karaokeDiv = document.getElementById('karaoke');
+
+let words = [];
+
+// Wczytanie JSON z tymi samymi wyrazami i czasami
+fetch('001_es.json')
+  .then(res => res.json())
+  .then(data => {
+    data.forEach(item => {
+      const span = document.createElement('span');
+      span.textContent = item.text + ' ';
+      span.dataset.start = item.start;
+      span.dataset.end = item.end;
+      span.className = 'word';
+      karaokeDiv.appendChild(span);
+      words.push(span);
+    });
+  })
+  .catch(err => console.error(err));
+
 let rafId = null;
 
-// Wczytaj JSON
-async function loadJson() {
-  const resp = await fetch(JSON_FILE);
-  if(!resp.ok) throw new Error('Nie można wczytać JSON');
-  const data = await resp.json();
-  return normalizeData(data);
-}
-
-// Normalizacja danych
-function normalizeData(data){
-  return data.map(item=>{
-    const words = (item.words || []).map(w=>({
-      text: w.text,
-      start: Number(w.start),
-      end: Number(w.end)
-    }));
-    return {
-      text: item.line || words.map(w=>w.text).join(' '),
-      start: Number(item.start || (words[0]?.start || 0)),
-      end: Number(item.end || (words.at(-1)?.end || 0)),
-      words
-    };
-  });
-}
-
-// Render bloków (tu po prostu wszystkie linie)
-function renderLines() {
-  lineBox.innerHTML = '';
-  lines.forEach((L, li)=>{
-    const div = document.createElement('div');
-    div.className = 'line';
-    L.words.forEach((w, wi)=>{
-      const span = document.createElement('span');
-      span.className = 'word';
-      span.id = `w_${li}_${wi}`;
-      span.textContent = w.text + (wi<L.words.length-1?' ':'');
-      div.appendChild(span);
-    });
-    lineBox.appendChild(div);
-  });
-}
-
-// Highlight loop
-function highlightLoop(){
+function highlightLoop() {
   const t = audio.currentTime;
-  lines.forEach((L, li)=>{
-    L.words.forEach((w, wi)=>{
-      const span = document.getElementById(`w_${li}_${wi}`);
-      if(!span) return;
-      if(t >= w.start && t <= w.end){
-        span.classList.add('highlight');
-      } else {
-        span.classList.remove('highlight');
-      }
-    });
+  words.forEach(w => {
+    const start = parseFloat(w.dataset.start);
+    const end = parseFloat(w.dataset.end);
+    if (t >= start && t <= end) {
+      w.classList.add('highlight');
+    } else {
+      w.classList.remove('highlight');
+    }
   });
-  if(!audio.paused) rafId = requestAnimationFrame(highlightLoop);
+  rafId = requestAnimationFrame(highlightLoop);
 }
 
-// Przycisk Play
-playBtn.addEventListener('click', ()=>{
-  audio.play().then(()=>{
-    playBtn.textContent = 'Pause';
-    if(!rafId) rafId = requestAnimationFrame(highlightLoop);
-  }).catch(e=>{
-    console.warn('Safari blokuje audio do momentu kliknięcia użytkownika', e);
-  });
-
-  if(!audio.paused && playBtn.textContent==='Pause'){
+playBtn.addEventListener('click', () => {
+  if (audio.paused) {
+    audio.play().catch(err => console.error(err));
+    playBtn.textContent = '⏸';
+    if (!rafId) rafId = requestAnimationFrame(highlightLoop);
+  } else {
     audio.pause();
-    playBtn.textContent='Play';
-    if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    playBtn.textContent = '▶';
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   }
 });
 
-// Restart
-restartBtn.addEventListener('click', ()=>{
-  audio.currentTime=0;
-  renderLines();
-  audio.play().then(()=>{
-    playBtn.textContent='Pause';
-    if(!rafId) rafId=requestAnimationFrame(highlightLoop);
-  });
+audio.addEventListener('ended', () => {
+  playBtn.textContent = '▶';
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 });
-
-// Back
-backBtn.addEventListener('click', ()=>{
-  audio.currentTime=0;
-  renderLines();
-});
-
-// Inicjalizacja
-(async function init(){
-  try{
-    lines = await loadJson();
-    renderLines();
-  }catch(e){
-    lineBox.innerHTML='<div style="color:#ffb3b3">Błąd w JSON</div>';
-    console.error(e);
-  }
-})();
 </script>
 
 </body>
