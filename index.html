@@ -1,193 +1,153 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Lina-XPANOL-presentacion</title>
-
+<meta charset="UTF-8">
+<title>Test Player Safari</title>
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
-
 <style>
-:root{
-  --highlight: #F6B511;
-  --bg-dim: 0.55;
-  --font: "Special Elite", monospace;
-}
+  body {
+    font-family: 'Special Elite', monospace;
+    background-color: black;
+    color: white;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+  }
 
-html,body{
-  height:100%;
-  margin:0;
-}
+  h1 {
+    text-align: center;
+    margin-bottom: 40px;
+    color: #F6B511;
+  }
 
-body{
-  font-family: var(--font);
-  background:#000;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  box-sizing:border-box;
-}
+  .player {
+    margin-bottom: 40px;
+  }
 
-.app {
-  width:100%;
-  max-width:1000px;
-  text-align:center;
-}
+  .word {
+    font-size: 24px;
+    padding: 2px;
+    transition: color 0.2s;
+  }
 
-.line-box {
-  min-height:120px;
-  margin:0 auto 18px;
-  padding:18px;
-  background:rgba(0,0,0,0.25);
-  border-radius:10px;
-  box-shadow:0 6px 24px rgba(0,0,0,0.5);
-}
+  .highlight {
+    color: #F6B511;
+    font-weight: 700;
+  }
 
-.line {
-  font-size:26px; /* powiększona czcionka */
-  line-height:1.45;
-  margin:12px 0;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
-}
+  .karaoke-line {
+    white-space: nowrap;
+    margin-bottom: 15px;
+  }
 
-.word { transition: color 0.12s ease; }
-.word.highlight { color: var(--highlight); font-weight:700; }
+  .audio-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-.controls {
-  display:flex;
-  gap:12px;
-  justify-content:center;
-  align-items:center;
-  margin-top:6px;
-}
-
-.btn {
-  background:var(--highlight);
-  color:#000;
-  border:0;
-  padding:10px 16px;
-  border-radius:8px;
-  font-family:var(--font);
-  font-size:16px;
-  cursor:pointer;
-}
-
-.btn:active { transform:translateY(1px); }
-
-@media (max-width:600px){
-  .line { font-size:20px; }
-  .line-box { padding:14px; min-height:110px; }
-}
+  button {
+    font-family: 'Special Elite', monospace;
+    background: #F6B511;
+    border: 1px solid white;
+    color: black;
+    cursor: pointer;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+  }
 </style>
 </head>
 <body>
-  <div class="app" role="application" aria-label="Karaoke">
-    <div class="line-box" id="lineBox" aria-live="polite"></div>
-    <div class="controls" role="toolbar">
-      <button class="btn" id="playBtn">Play</button>
-      <button class="btn" id="restartBtn">Restart</button>
-    </div>
-  </div>
 
-  <audio id="audio" src="001_es.mp3" preload="auto"></audio>
+<h1>Test Player Safari</h1>
+
+<div id="players"></div>
 
 <script>
-const JSON_FILE = '001_es.json';
+async function loadKaraoke(audioFile, jsonFile, container) {
+  try {
+    const res = await fetch(jsonFile);
+    if (!res.ok) throw new Error(`Nie znaleziono ${jsonFile}`);
+    const data = await res.json();
 
-const audio = document.getElementById('audio');
-const lineBox = document.getElementById('lineBox');
-const playBtn = document.getElementById('playBtn');
-const restartBtn = document.getElementById('restartBtn');
+    const playerDiv = document.createElement('div');
+    playerDiv.className = 'player';
 
-let lines = [];
-let rafId = null;
+    const audio = document.createElement('audio');
+    audio.src = audioFile;
 
-async function loadJson(file){
-  const resp = await fetch(file);
-  if(!resp.ok) throw new Error('Nie można wczytać JSON.');
-  const data = await resp.json();
-  return normalizeData(data);
-}
+    const karaokeDiv = document.createElement('div');
+    karaokeDiv.className = 'karaoke-line';
 
-function normalizeData(data){
-  return data.map(item => {
-    const words = (item.words || []).map(w => ({
-      text: w.text,
-      start: Number(w.start),
-      end: Number(w.end)
-    }));
-    return {
-      text: item.line !== undefined ? item.line : words.map(w=>w.text).join(' '),
-      start: Number(item.start || (words.length?words[0].start:0)),
-      end: Number(item.end || (words.length?words[words.length-1].end:0)),
-      words
-    };
-  });
-}
+    data.forEach((item, i) => {
+      const words = item.text.split(' ');
+      const start = parseFloat(item.start);
+      const end = parseFloat(item.end);
+      const duration = end - start;
+      const wordDuration = duration / words.length;
 
-function renderLines(){
-  lineBox.innerHTML = '';
-  lines.forEach((L, li)=>{
-    const div = document.createElement('div');
-    div.className='line';
-    L.words.forEach((w, wi)=>{
-      const span = document.createElement('span');
-      span.className='word';
-      span.id = `w_${li}_${wi}`;
-      span.textContent = w.text + (wi<L.words.length-1?' ':'');
-      div.appendChild(span);
+      words.forEach((word, j) => {
+        const span = document.createElement('span');
+        span.textContent = word + ' ';
+        span.dataset.start = (start + j * wordDuration).toFixed(2);
+        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
+        span.id = `${audioFile}-word-${i}-${j}`;
+        span.className = 'word';
+        karaokeDiv.appendChild(span);
+      });
     });
-    lineBox.appendChild(div);
-  });
-}
 
-function highlightLoop(){
-  const t = audio.currentTime;
-  lines.forEach((L, li)=>{
-    L.words.forEach((w, wi)=>{
-      const span = document.getElementById(`w_${li}_${wi}`);
-      if(!span) return;
-      if(t>=w.start && t<=w.end){
-        span.classList.add('highlight');
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'audio-container';
+
+    const playBtn = document.createElement('button');
+    playBtn.textContent = '▶';
+    controlsDiv.appendChild(playBtn);
+
+    playerDiv.appendChild(karaokeDiv);
+    playerDiv.appendChild(controlsDiv);
+    container.appendChild(playerDiv);
+
+    function updateHighlight() {
+      const time = audio.currentTime;
+      karaokeDiv.querySelectorAll('.word').forEach(span => {
+        const start = parseFloat(span.dataset.start);
+        const end = parseFloat(span.dataset.end);
+        if (time >= start && time <= end) {
+          span.classList.add('highlight');
+        } else {
+          span.classList.remove('highlight');
+        }
+      });
+      if (!audio.paused) requestAnimationFrame(updateHighlight);
+    }
+
+    playBtn.addEventListener('click', () => {
+      if(audio.paused) {
+        audio.play();
+        playBtn.textContent = '⏸';
+        requestAnimationFrame(updateHighlight);
       } else {
-        span.classList.remove('highlight');
+        audio.pause();
+        playBtn.textContent = '▶';
       }
     });
-  });
-  if(!audio.paused){
-    rafId = requestAnimationFrame(highlightLoop);
+
+  } catch (err) {
+    console.error('Błąd:', err);
   }
 }
 
-playBtn.addEventListener('click', async ()=>{
-  try{
-    await audio.play();
-    playBtn.textContent = 'Pause';
-    if(!rafId) rafId=requestAnimationFrame(highlightLoop);
-  }catch(err){
-    console.error('Nie udało się odtworzyć audio w Safari:', err);
-  }
-});
-
-restartBtn.addEventListener('click', ()=>{
-  audio.currentTime=0;
-  renderLines();
-  audio.play();
-  playBtn.textContent='Pause';
-  if(!rafId) rafId=requestAnimationFrame(highlightLoop);
-});
-
-(async function init(){
-  try{
-    lines = await loadJson(JSON_FILE);
-    renderLines();
-  }catch(e){
-    lineBox.innerHTML='<div style="color:#ffb3b3">Błąd w JSON</div>';
-    console.error(e);
-  }
-})();
+// pliki znajdują się w tym samym katalogu co HTML
+const playersContainer = document.getElementById('players');
+loadKaraoke('001_es.mp3', '001_es.json', playersContainer);
 </script>
+
 </body>
 </html>
