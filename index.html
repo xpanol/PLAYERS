@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Safari Audio Test</title>
+<title>Safari Audio z podświetleniem</title>
 
 <style>
   body {
@@ -11,8 +11,9 @@
     background: #111;
     color: #fff;
     text-align: center;
-    padding-top: 80px;
+    padding: 50px;
   }
+
   button {
     background: #f6b511;
     border: none;
@@ -20,29 +21,56 @@
     font-size: 20px;
     border-radius: 10px;
     cursor: pointer;
+    margin-bottom: 30px;
   }
+
   button:active {
     transform: translateY(1px);
+  }
+
+  .highlight {
+    color: #f6b511;
+    transition: color 0.3s;
   }
 </style>
 </head>
 <body>
 
-<h1>Test audio w Safari i Chrome</h1>
+<h1>Test audio z podświetlaniem</h1>
 
 <button id="playBtn">Play</button>
 
-<!-- źródło ustawione w HTML -->
-<audio id="audio" preload="auto" src="001_es.mp3"></audio>
+<p id="text">To jest przykładowy tekst, który zostanie podświetlony podczas odtwarzania audio.</p>
+
+<audio id="audio" preload="auto" src="https://raw.githubusercontent.com/xpanol/SAFARICHECK/main/001_es.mp3"></audio>
 
 <script>
 const audio = document.getElementById('audio');
 const btn = document.getElementById('playBtn');
+const text = document.getElementById('text');
+let isPlaying = false;
 
 btn.addEventListener('click', () => {
-  audio.play()
-    .then(() => console.log('Odtwarzanie działa'))
-    .catch(err => console.log('Safari blokuje:', err));
+  if (!isPlaying) {
+    audio.play()
+      .then(() => {
+        isPlaying = true;
+        btn.textContent = 'Pause';
+        text.classList.add('highlight');
+      })
+      .catch(err => console.log('Safari blokuje:', err));
+  } else {
+    audio.pause();
+    isPlaying = false;
+    btn.textContent = 'Play';
+    text.classList.remove('highlight');
+  }
+});
+
+audio.addEventListener('ended', () => {
+  isPlaying = false;
+  btn.textContent = 'Play';
+  text.classList.remove('highlight');
 });
 </script>
 
