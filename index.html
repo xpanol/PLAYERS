@@ -18,7 +18,7 @@
     text-align: center;
     font-family: 'Special Elite', monospace;
     margin-bottom: 40px;
-    color: #F6B511;
+    color: #f8ac10;
   }
 
   .player {
@@ -35,7 +35,8 @@
   }
 
   .highlight {
-    color: #F6B511;
+    color: #f8ac10;
+    font-weight: bold;
   }
 
   .karaoke-line {
@@ -51,7 +52,7 @@
 
   button {
     font-family: 'Special Elite', monospace;
-    background: #F6B511;
+    background: #f8ac10;
     border: 1px solid white;
     color: white;
     cursor: pointer;
@@ -96,18 +97,6 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     playBtn.textContent = '▶';
     controlsDiv.appendChild(playBtn);
 
-    const timeDisplay = document.createElement('div');
-    timeDisplay.className = 'time';
-    timeDisplay.textContent = '0:00 / 0:00';
-    controlsDiv.appendChild(timeDisplay);
-
-    const progressBar = document.createElement('div');
-    progressBar.className = 'progress';
-    const progressFilled = document.createElement('div');
-    progressFilled.className = 'progress-filled';
-    progressBar.appendChild(progressFilled);
-    controlsDiv.appendChild(progressBar);
-
     const karaokeDiv = document.createElement('div');
     karaokeDiv.className = 'karaoke-line';
 
@@ -140,10 +129,6 @@ async function loadKaraoke(audioFile, jsonFile, container) {
 
     audio.addEventListener('timeupdate', () => {
       const time = audio.currentTime;
-      const duration = audio.duration;
-
-      progressFilled.style.width = `${(time/duration)*100}%`;
-
       karaokeDiv.querySelectorAll('.word').forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
@@ -155,24 +140,18 @@ async function loadKaraoke(audioFile, jsonFile, container) {
       });
     });
 
-    progressBar.addEventListener('click', (e) => {
-      const rect = progressBar.getBoundingClientRect();
-      const pos = (e.clientX - rect.left) / rect.width;
-      audio.currentTime = pos * audio.duration;
-    });
-
   } catch (err) {
     console.error('Error al cargar karaoke:', err);
   }
 }
 
 const playersContainer = document.getElementById('players');
-const files = Array.from({ length: 30 }, (_, i) => i + 1); // bez sortowania, naturalna kolejność
+const files = Array.from({ length: 30 }, (_, i) => i + 1); // od 1 do 30
 
 files.forEach(i => {
   const num = i.toString().padStart(3, '0');
-  const audioFile = `mp3/ES/${num}_es.mp3`;
-  const jsonFile = `json/ES/${num}_es.json`;
+  const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
+  const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
   loadKaraoke(audioFile, jsonFile, playersContainer);
 });
 </script>
