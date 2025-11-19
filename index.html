@@ -23,11 +23,18 @@
 
   .player {
     margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .karaoke-line {
+    white-space: nowrap;
   }
 
   .word {
     font-size: 28px;
-    padding-right: 8px; /* większy odstęp między słowami */
+    padding-right: 8px;
     transition: color 0.2s;
   }
 
@@ -36,15 +43,10 @@
     font-weight: 700;
   }
 
-  .karaoke-line {
-    white-space: nowrap;
-    margin-top: 10px;
-  }
-
   .audio-container {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    justify-content: flex-start;
   }
 
   button {
@@ -61,6 +63,7 @@
     justify-content: center;
     align-items: center;
     padding: 0;
+    margin-bottom: 5px;
   }
 
   .time, .progress {
@@ -97,12 +100,16 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     const karaokeDiv = document.createElement('div');
     karaokeDiv.className = 'karaoke-line';
 
+    const wordsArray = [];
+
     data.forEach((item, i) => {
       const words = item.text.split(' ');
       const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
       const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
       const duration = end - start;
       const wordDuration = duration / words.length;
+
+      const spanArray = [];
 
       words.forEach((word, j) => {
         const span = document.createElement('span');
@@ -112,63 +119,82 @@ async function loadKaraoke(audioFile, jsonFile, container) {
         span.id = `${audioFile}-word-${i}-${j}`;
         span.className = 'word';
         karaokeDiv.appendChild(span);
+        spanArray.push(span);
       });
+
+      wordsArray.push({spanArray, completed: false});
     });
 
     playerDiv.appendChild(controlsDiv);   
     playerDiv.appendChild(karaokeDiv);    
     container.appendChild(playerDiv);
 
-    let finished = false;
+    let rafId = null;
+    let playing = false;
+
+    function highlightLoop() {
+      const t = audio.currentTime;
+      wordsArray.forEach(obj => {
+        obj.spanArray.forEach(span => {
+          const start = parseFloat(span.dataset.start);
+          const end = parseFloat(span.dataset.end);
+          if(t >= start && t <= end){
+            span.classList.add('highlight');
+          } else {
+            span.classList.remove('highlight');
+          }
+        });
+      });
+      if(!audio.paused) rafId = requestAnimationFrame(highlightLoop);
+    }
 
     function resetKaraoke() {
-      karaokeDiv.querySelectorAll('.word').forEach(span => {
-        span.style.color = '#fff';
-        span.classList.remove('highlight');
+      wordsArray.forEach(obj => {
+        obj.spanArray.forEach(span => {
+          span.style.color = '#fff';
+          span.classList.remove('highlight');
+        });
+        obj.completed = false;
       });
       playBtn.style.backgroundColor = '#F6B511';
-      finished = false;
+      playing = false;
     }
 
     playBtn.addEventListener('click', () => {
-      if(finished){
-        resetKaraoke();
-        audio.currentTime = 0;
-        audio.play();
+      if(!playing){
+        if(audio.paused){
+          audio.play();
+        }
         playBtn.textContent = '❚❚';
-        return;
-      }
-
-      if(audio.paused){
-        audio.play();
-        playBtn.textContent = '❚❚';
+        playing = true;
+        rafId = requestAnimationFrame(highlightLoop);
       } else {
         audio.pause();
         playBtn.textContent = '▶';
+        playing = false;
+        if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
       }
     });
 
-    audio.addEventListener('timeupdate', () => {
-      const time = audio.currentTime;
-      karaokeDiv.querySelectorAll('.word').forEach(span => {
-        const start = parseFloat(span.dataset.start);
-        const end = parseFloat(span.dataset.end);
-        if(time >= start && time <= end){
-          span.classList.add('highlight');
-        } else {
-          span.classList.remove('highlight');
-        }
-      });
-    });
-
     audio.addEventListener('ended', () => {
-      finished = true;
       playBtn.textContent = '▶';
       playBtn.style.backgroundColor = '#9b835a';
-      karaokeDiv.querySelectorAll('.word').forEach(span => {
-        span.style.color = '#9b835a';
-        span.classList.remove('highlight');
+      wordsArray.forEach(obj => {
+        obj.completed = true;
+        obj.spanArray.forEach(span => {
+          span.style.color = '#9b835a';
+          span.classList.remove('highlight');
+        });
       });
+      playing = false;
+      if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    });
+
+    audio.addEventListener('play', () => {
+      if(wordsArray.some(obj => obj.completed)){
+        resetKaraoke();
+        audio.currentTime = 0;
+      }
     });
 
   } catch (err) {
