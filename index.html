@@ -24,7 +24,7 @@
   .player {
     margin-bottom: 40px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 15px;
   }
 
@@ -74,75 +74,107 @@
 
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<div id="players">
-  <!-- Generowanie 30 odtwarzaczy statycznie -->
-  <script>
-  for (let i = 1; i <= 30; i++) {
-    const num = i.toString().padStart(3, '0');
-    document.write(`
-      <div class="player">
-        <div class="audio-container">
-          <button onclick="playAudio('${num}')">▶</button>
-          <audio id="audio${num}" src="mp3/ES/${num}_es.mp3" preload="metadata" playsinline></audio>
-        </div>
-        <div class="karaoke-line" id="karaoke${num}"></div>
-      </div>
-    `);
-  }
-  </script>
-</div>
+<div id="players"></div>
 
 <script>
-// Wczytywanie JSON dla wszystkich odtwarzaczy w tle
-for (let i = 1; i <= 30; i++) {
-  const num = i.toString().padStart(3, '0');
-  const karaokeDiv = document.getElementById(`karaoke${num}`);
-  const jsonFile = `json/ES/${num}_es.json`;
+async function loadKaraoke(audioFile, jsonFile, container) {
+  try {
+    const res = await fetch(jsonFile);
+    if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
+    const data = await res.json();
 
-  fetch(jsonFile)
-    .then(res => res.ok ? res.json() : Promise.reject(`Nie znaleziono ${jsonFile}`))
-    .then(data => {
-      data.forEach(item => {
-        const words = item.text.split(' ');
-        const start = parseFloat(item.start.split(':').reduce((acc, t) => 60 * acc + +t));
-        const end = parseFloat(item.end.split(':').reduce((acc, t) => 60 * acc + +t));
-        const duration = end - start;
-        const wordDuration = duration / words.length;
+    const playerDiv = document.createElement('div');
+    playerDiv.className = 'player';
 
-        words.forEach((word, j) => {
-          const span = document.createElement('span');
-          span.textContent = word + ' ';
-          span.dataset.start = (start + j * wordDuration).toFixed(2);
-          span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-          span.className = 'word';
-          karaokeDiv.appendChild(span);
-        });
+    const audio = document.createElement('audio');
+    audio.src = audioFile;
+
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'audio-container';
+
+    const playBtn = document.createElement('button');
+    playBtn.textContent = '▶';
+    controlsDiv.appendChild(playBtn);
+
+    const timeDisplay = document.createElement('div');
+    timeDisplay.className = 'time';
+    timeDisplay.textContent = '0:00 / 0:00';
+    controlsDiv.appendChild(timeDisplay);
+
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress';
+    const progressFilled = document.createElement('div');
+    progressFilled.className = 'progress-filled';
+    progressBar.appendChild(progressFilled);
+    controlsDiv.appendChild(progressBar);
+
+    const karaokeDiv = document.createElement('div');
+    karaokeDiv.className = 'karaoke-line';
+
+    data.forEach((item, i) => {
+      const words = item.text.split(' ');
+      const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
+      const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
+      const duration = end - start;
+      const wordDuration = duration / words.length;
+
+      words.forEach((word, j) => {
+        const span = document.createElement('span');
+        span.textContent = word + ' ';
+        span.dataset.start = (start + j * wordDuration).toFixed(2);
+        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
+        span.id = `${audioFile}-word-${i}-${j}`;
+        span.className = 'word';
+        karaokeDiv.appendChild(span);
       });
-      karaokeDiv.dataset.loaded = 'true';
-    })
-    .catch(err => console.error('Błąd wczytywania JSON:', err));
-}
-
-// Funkcja odtwarzania audio
-function playAudio(num) {
-  const audioEl = document.getElementById(`audio${num}`);
-  const karaokeDiv = document.getElementById(`karaoke${num}`);
-
-  audioEl.currentTime = 0;
-  audioEl.play().catch(err => console.warn('Safari zablokowało odtwarzanie:', err));
-
-  audioEl.ontimeupdate = () => {
-    karaokeDiv.querySelectorAll('.word').forEach(span => {
-      const start = parseFloat(span.dataset.start);
-      const end = parseFloat(span.dataset.end);
-      if (audioEl.currentTime >= start && audioEl.currentTime <= end) {
-        span.classList.add('highlight');
-      } else {
-        span.classList.remove('highlight');
-      }
     });
-  };
+
+    playerDiv.appendChild(controlsDiv);   
+    playerDiv.appendChild(karaokeDiv);    
+    container.appendChild(playerDiv);
+
+    playBtn.addEventListener('click', () => {
+      if(audio.paused) audio.play();
+      else audio.pause();
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      const time = audio.currentTime;
+      const duration = audio.duration;
+
+      progressFilled.style.width = `${(time/duration)*100}%`;
+
+      karaokeDiv.querySelectorAll('.word').forEach(span => {
+        const start = parseFloat(span.dataset.start);
+        const end = parseFloat(span.dataset.end);
+        if (time >= start && time <= end) {
+          span.classList.add('highlight');
+        } else {
+          span.classList.remove('highlight');
+        }
+      });
+    });
+
+    progressBar.addEventListener('click', (e) => {
+      const rect = progressBar.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      audio.currentTime = pos * audio.duration;
+    });
+
+  } catch (err) {
+    console.error('Error al cargar karaoke:', err);
+  }
 }
+
+const playersContainer = document.getElementById('players');
+const files = Array.from({ length: 30 }, (_, i) => i + 1); // bez sortowania, naturalna kolejność
+
+files.forEach(i => {
+  const num = i.toString().padStart(3, '0');
+  const audioFile = `mp3/ES/${num}_es.mp3`;
+  const jsonFile = `json/ES/${num}_es.json`;
+  loadKaraoke(audioFile, jsonFile, playersContainer);
+});
 </script>
 
 </body>
