@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Test Safari Karaoke</title>
+<title>MARKETING DIGITAL / DIGITAL MARKETING</title>
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   body {
@@ -10,12 +10,13 @@
     background-color: black;
     color: white;
     max-width: 1000px;
-    margin: 50px auto;
+    margin:50px auto;
     padding: 20px;
   }
 
   h1 {
     text-align: center;
+    font-family: 'Special Elite', monospace;
     margin-bottom: 40px;
     color: #F6B511;
   }
@@ -38,9 +39,14 @@
   }
 
   .karaoke-line {
+    white-space: nowrap;
     display: flex;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
+    align-items: center;
+  }
+
+  .audio-container {
+    display: flex;
+    align-items: center;
   }
 
   button {
@@ -58,38 +64,44 @@
     align-items: center;
     padding: 0;
   }
+
+  .time, .progress {
+    display: none;
+  }
 </style>
 </head>
 <body>
 
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<div class="player">
-  <div>
-    <button id="playBtn">▶</button>
-    <audio id="audio001" preload="auto" playsinline></audio>
-  </div>
-  <div class="karaoke-line" id="karaoke001"></div>
+<div id="players">
+  <!-- Generowanie 30 odtwarzaczy statycznie -->
+  <script>
+  for (let i = 1; i <= 30; i++) {
+    const num = i.toString().padStart(3, '0');
+    document.write(`
+      <div class="player">
+        <div class="audio-container">
+          <button onclick="playAudio('${num}')">▶</button>
+          <audio id="audio${num}" src="mp3/ES/${num}_es.mp3" preload="metadata" playsinline></audio>
+        </div>
+        <div class="karaoke-line" id="karaoke${num}"></div>
+      </div>
+    `);
+  }
+  </script>
 </div>
 
 <script>
-const audio = document.getElementById('audio001');
-const playBtn = document.getElementById('playBtn');
-const karaokeDiv = document.getElementById('karaoke001');
-let wordsLoaded = false;
+// Wczytywanie JSON dla wszystkich odtwarzaczy w tle
+for (let i = 1; i <= 30; i++) {
+  const num = i.toString().padStart(3, '0');
+  const karaokeDiv = document.getElementById(`karaoke${num}`);
+  const jsonFile = `json/ES/${num}_es.json`;
 
-// GitHub Pages URL do plików
-const mp3URL = 'https://xpanol.github.io/SAFARICHECK/001_es.mp3';
-const jsonURL = 'https://xpanol.github.io/SAFARICHECK/001_es.json';
-
-playBtn.addEventListener('click', async () => {
-  if (!audio.src) audio.src = mp3URL;
-
-  if (!wordsLoaded) {
-    try {
-      const res = await fetch(jsonURL);
-      const data = await res.json();
-
+  fetch(jsonFile)
+    .then(res => res.ok ? res.json() : Promise.reject(`Nie znaleziono ${jsonFile}`))
+    .then(data => {
       data.forEach(item => {
         const words = item.text.split(' ');
         const start = parseFloat(item.start.split(':').reduce((acc, t) => 60 * acc + +t));
@@ -106,28 +118,31 @@ playBtn.addEventListener('click', async () => {
           karaokeDiv.appendChild(span);
         });
       });
+      karaokeDiv.dataset.loaded = 'true';
+    })
+    .catch(err => console.error('Błąd wczytywania JSON:', err));
+}
 
-      wordsLoaded = true;
-    } catch (err) {
-      console.error('Błąd wczytywania JSON:', err);
-    }
-  }
+// Funkcja odtwarzania audio
+function playAudio(num) {
+  const audioEl = document.getElementById(`audio${num}`);
+  const karaokeDiv = document.getElementById(`karaoke${num}`);
 
-  audio.currentTime = 0;
-  audio.play().catch(err => console.warn('Safari zablokowało odtwarzanie:', err));
-});
+  audioEl.currentTime = 0;
+  audioEl.play().catch(err => console.warn('Safari zablokowało odtwarzanie:', err));
 
-audio.addEventListener('timeupdate', () => {
-  karaokeDiv.querySelectorAll('.word').forEach(span => {
-    const start = parseFloat(span.dataset.start);
-    const end = parseFloat(span.dataset.end);
-    if (audio.currentTime >= start && audio.currentTime <= end) {
-      span.classList.add('highlight');
-    } else {
-      span.classList.remove('highlight');
-    }
-  });
-});
+  audioEl.ontimeupdate = () => {
+    karaokeDiv.querySelectorAll('.word').forEach(span => {
+      const start = parseFloat(span.dataset.start);
+      const end = parseFloat(span.dataset.end);
+      if (audioEl.currentTime >= start && audioEl.currentTime <= end) {
+        span.classList.add('highlight');
+      } else {
+        span.classList.remove('highlight');
+      }
+    });
+  };
+}
 </script>
 
 </body>
