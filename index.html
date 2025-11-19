@@ -110,4 +110,66 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     karaokeDiv.className = 'karaoke-line';
 
     data.forEach((item, i) => {
-      const words = item.text.split('
+      const words = item.text.split(' ');
+      const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
+      const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
+      const duration = end - start;
+      const wordDuration = duration / words.length;
+
+      words.forEach((word, j) => {
+        const span = document.createElement('span');
+        span.textContent = word;
+        span.dataset.start = (start + j * wordDuration).toFixed(2);
+        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
+        span.id = `${audioFile}-word-${i}-${j}`;
+        span.className = 'word';
+        karaokeDiv.appendChild(span);
+      });
+    });
+
+    playerDiv.appendChild(controlsDiv);
+    playerDiv.appendChild(karaokeDiv);
+    container.appendChild(playerDiv);
+
+    playBtn.addEventListener('click', () => {
+      if(audio.paused){
+        audio.play();
+        playBtn.textContent = '❚❚';
+        playBtn.style.backgroundColor = '#F8AC10';
+      } else {
+        audio.pause();
+        playBtn.textContent = '▶';
+      }
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      const time = audio.currentTime;
+      karaokeDiv.querySelectorAll('.word').forEach(span => {
+        const start = parseFloat(span.dataset.start);
+        const end = parseFloat(span.dataset.end);
+        if (time >= start && time <= end) {
+          span.classList.add('highlight');
+        } else {
+          span.classList.remove('highlight');
+        }
+      });
+    });
+
+    audio.addEventListener('ended', () => {
+      playBtn.textContent = '▶';
+      playBtn.style.backgroundColor = '#9b835a';
+
+      const lines = karaokeDiv.querySelectorAll('.word');
+      lines.forEach(span => {
+        span.style.color = '#9b835a';
+      });
+    });
+
+  } catch (err) {
+    console.error('Error al cargar karaoke:', err);
+  }
+}
+</script>
+
+</body>
+</html>
