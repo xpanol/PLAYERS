@@ -24,14 +24,13 @@
   .player {
     margin-bottom: 40px;
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 15px;
   }
 
   .audio-container {
     display: flex;
     align-items: center;
-    gap: 15px;
   }
 
   button {
@@ -53,7 +52,8 @@
   .karaoke-line {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
+    flex: 1;
   }
 
   .word {
@@ -87,6 +87,16 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'audio-container';
+
+    const audio = document.createElement('audio');
+    audio.src = audioFile;
+
+    const playBtn = document.createElement('button');
+    playBtn.textContent = '▶';
+    controlsDiv.appendChild(playBtn);
+
     const karaokeDiv = document.createElement('div');
     karaokeDiv.className = 'karaoke-line';
 
@@ -110,18 +120,8 @@ async function loadKaraoke(audioFile, jsonFile, container) {
       });
     });
 
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'audio-container';
-
-    const audio = document.createElement('audio');
-    audio.src = audioFile;
-
-    const playBtn = document.createElement('button');
-    playBtn.textContent = '▶';
-    controlsDiv.appendChild(playBtn);
-
-    playerDiv.appendChild(karaokeDiv);  
-    playerDiv.appendChild(controlsDiv); 
+    playerDiv.appendChild(controlsDiv);  
+    playerDiv.appendChild(karaokeDiv); 
     container.appendChild(playerDiv);
 
     let completed = false;
