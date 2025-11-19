@@ -32,6 +32,7 @@
     font-size: 28px;
     padding: 2px 6px; /* większy odstęp między słowami */
     transition: color 0.2s;
+    color: #fff;
   }
 
   .highlight {
@@ -78,7 +79,7 @@
 
 <script>
 const playersContainer = document.getElementById('players');
-const files = Array.from({ length: 30 }, (_, i) => i + 1); // stała kolejność 1–30
+const files = Array.from({ length: 30 }, (_, i) => i + 1);
 
 files.forEach(i => {
   const num = i.toString().padStart(3, '0');
@@ -131,11 +132,28 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     playerDiv.appendChild(karaokeDiv);
     container.appendChild(playerDiv);
 
+    let finished = false;
+
+    function resetSentence() {
+      karaokeDiv.querySelectorAll('.word').forEach(span => {
+        span.style.color = '#fff';
+      });
+      finished = false;
+    }
+
     playBtn.addEventListener('click', () => {
+      if(finished){
+        audio.currentTime = 0;
+        resetSentence();
+        audio.play();
+        playBtn.textContent = '❚❚';
+        finished = false;
+        return;
+      }
+
       if(audio.paused){
         audio.play();
         playBtn.textContent = '❚❚';
-        playBtn.style.backgroundColor = '#F8AC10';
       } else {
         audio.pause();
         playBtn.textContent = '▶';
@@ -147,7 +165,7 @@ async function loadKaraoke(audioFile, jsonFile, container) {
       karaokeDiv.querySelectorAll('.word').forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
-        if (time >= start && time <= end) {
+        if (time >= start && time <= end){
           span.classList.add('highlight');
         } else {
           span.classList.remove('highlight');
@@ -156,11 +174,10 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     });
 
     audio.addEventListener('ended', () => {
+      finished = true;
       playBtn.textContent = '▶';
       playBtn.style.backgroundColor = '#9b835a';
-
-      const lines = karaokeDiv.querySelectorAll('.word');
-      lines.forEach(span => {
+      karaokeDiv.querySelectorAll('.word').forEach(span => {
         span.style.color = '#9b835a';
       });
     });
