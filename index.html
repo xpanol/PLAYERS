@@ -1,38 +1,132 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Safari click test</title>
+<title>Test Safari Karaoke</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   body {
-    background: #222;
+    font-family: 'Special Elite', monospace;
+    background-color: black;
     color: white;
-    text-align: center;
-    padding-top: 100px;
+    max-width: 1000px;
+    margin: 50px auto;
+    padding: 20px;
   }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 40px;
+    color: #F6B511;
+  }
+
+  .player {
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .word {
+    font-size: 28px;
+    padding: 2px;
+    transition: color 0.2s;
+  }
+
+  .highlight {
+    color: #F6B511;
+  }
+
+  .karaoke-line {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
   button {
-    padding: 20px 30px;
-    font-size: 22px;
-    background: orange;
-    border: none;
-    border-radius: 14px;
+    font-family: 'Special Elite', monospace;
+    background: #F6B511;
+    border: 1px solid white;
+    color: white;
     cursor: pointer;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
   }
 </style>
 </head>
-
 <body>
 
-<h1>Test kliknięcia w Safari</h1>
+<h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<button id="b">KLIKNIJ MNIE</button>
+<div class="player">
+  <div>
+    <button id="playBtn">▶</button>
+    <audio id="audio001" preload="auto" playsinline></audio>
+  </div>
+  <div class="karaoke-line" id="karaoke001"></div>
+</div>
 
 <script>
-console.log('JS działa i został załadowany');
+const audio = document.getElementById('audio001');
+const playBtn = document.getElementById('playBtn');
+const karaokeDiv = document.getElementById('karaoke001');
+let wordsLoaded = false;
 
-document.getElementById('b').addEventListener('click', () => {
-    console.log('Safari widzi kliknięcie');
-    alert('Safari widzi kliknięcie');
+// GitHub Pages URL do plików
+const mp3URL = 'https://xpanol.github.io/SAFARICHECK/001_es.mp3';
+const jsonURL = 'https://xpanol.github.io/SAFARICHECK/001_es.json';
+
+playBtn.addEventListener('click', async () => {
+  if (!audio.src) audio.src = mp3URL;
+
+  if (!wordsLoaded) {
+    try {
+      const res = await fetch(jsonURL);
+      const data = await res.json();
+
+      data.forEach(item => {
+        const words = item.text.split(' ');
+        const start = parseFloat(item.start.split(':').reduce((acc, t) => 60 * acc + +t));
+        const end = parseFloat(item.end.split(':').reduce((acc, t) => 60 * acc + +t));
+        const duration = end - start;
+        const wordDuration = duration / words.length;
+
+        words.forEach((word, j) => {
+          const span = document.createElement('span');
+          span.textContent = word + ' ';
+          span.dataset.start = (start + j * wordDuration).toFixed(2);
+          span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
+          span.className = 'word';
+          karaokeDiv.appendChild(span);
+        });
+      });
+
+      wordsLoaded = true;
+    } catch (err) {
+      console.error('Błąd wczytywania JSON:', err);
+    }
+  }
+
+  audio.currentTime = 0;
+  audio.play().catch(err => console.warn('Safari zablokowało odtwarzanie:', err));
+});
+
+audio.addEventListener('timeupdate', () => {
+  karaokeDiv.querySelectorAll('.word').forEach(span => {
+    const start = parseFloat(span.dataset.start);
+    const end = parseFloat(span.dataset.end);
+    if (audio.currentTime >= start && audio.currentTime <= end) {
+      span.classList.add('highlight');
+    } else {
+      span.classList.remove('highlight');
+    }
+  });
 });
 </script>
 
