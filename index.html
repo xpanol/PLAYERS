@@ -28,9 +28,31 @@
     gap: 15px;
   }
 
-  .audio-container {
+  .karaoke-line {
+    white-space: nowrap;
+    font-size: 28px;
     display: flex;
     align-items: center;
+    gap: 12px;
+  }
+
+  .word {
+    transition: color 0.2s;
+  }
+
+  .highlight {
+    color: #F8AC10;
+  }
+
+  .completed {
+    color: #9b835a;
+  }
+
+  .audio-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
   }
 
   button {
@@ -49,25 +71,8 @@
     padding: 0;
   }
 
-  .karaoke-line {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    flex: 1;
-  }
-
-  .word {
-    color: #fff;
-    font-size: 28px;
-    transition: color 0.2s;
-  }
-
-  .word.highlight {
-    color: #F8AC10;
-  }
-
-  .word.completed {
-    color: #9b835a;
+  .time, .progress {
+    display: none;
   }
 </style>
 </head>
@@ -87,11 +92,11 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'audio-container';
-
     const audio = document.createElement('audio');
     audio.src = audioFile;
+
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'audio-container';
 
     const playBtn = document.createElement('button');
     playBtn.textContent = '▶';
@@ -100,7 +105,7 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     const karaokeDiv = document.createElement('div');
     karaokeDiv.className = 'karaoke-line';
 
-    const wordsArr = [];
+    const wordsArray = [];
 
     data.forEach((item, i) => {
       const words = item.text.split(' ');
@@ -116,48 +121,35 @@ async function loadKaraoke(audioFile, jsonFile, container) {
         span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
         span.className = 'word';
         karaokeDiv.appendChild(span);
-        wordsArr.push(span);
+        wordsArray.push(span);
       });
     });
 
-    playerDiv.appendChild(controlsDiv);  
-    playerDiv.appendChild(karaokeDiv); 
+    playerDiv.appendChild(playBtn);
+    playerDiv.appendChild(karaokeDiv);
+    playerDiv.appendChild(controlsDiv);
     container.appendChild(playerDiv);
 
-    let completed = false;
     let rafId = null;
-
-    function resetWords() {
-      wordsArr.forEach(span => {
-        span.classList.remove('highlight');
-        span.classList.remove('completed');
-        span.style.color = '#fff';
-      });
-      completed = false;
-    }
+    let completed = false;
 
     function highlightLoop() {
       const t = audio.currentTime;
-      let allDone = true;
-
-      wordsArr.forEach(span => {
+      let active = false;
+      wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
         if(t >= start && t <= end){
           span.classList.add('highlight');
-          allDone = false;
+          active = true;
         } else {
           span.classList.remove('highlight');
-          if(t < end) allDone = false;
         }
       });
-
-      if(t >= audio.duration){
+      if(t >= audio.duration) {
         completed = true;
-        wordsArr.forEach(span => {
-          span.classList.remove('highlight');
-          span.classList.add('completed');
-        });
+        wordsArray.forEach(span => span.classList.remove('highlight'));
+        wordsArray.forEach(span => span.classList.add('completed'));
         playBtn.textContent = '▶';
         cancelAnimationFrame(rafId);
         rafId = null;
@@ -167,14 +159,18 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     }
 
     playBtn.addEventListener('click', () => {
+      if(completed){
+        wordsArray.forEach(span => { 
+          span.classList.remove('completed'); 
+          span.style.color = 'white';
+        });
+        audio.currentTime = 0;
+        completed = false;
+      }
+
       if(audio.paused){
-        if(completed){
-          resetWords();
-          audio.currentTime = 0;
-          audio.load(); // zapewnia pełne odtworzenie
-        }
         audio.play();
-        playBtn.textContent = '⏸';
+        playBtn.textContent = '❚❚';
         if(!rafId) rafId = requestAnimationFrame(highlightLoop);
       } else {
         audio.pause();
@@ -192,7 +188,7 @@ const playersContainer = document.getElementById('players');
 const files = Array.from({ length: 30 }, (_, i) => i + 1);
 
 files.forEach(i => {
-  const num = i.toString().padStart(3, '0');
+  const num = i.toString().padStart(3,'0');
   const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
   const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
   loadKaraoke(audioFile, jsonFile, playersContainer);
