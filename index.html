@@ -2,23 +2,20 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Safari Audio Bypass</title>
-
+<title>Safari click test</title>
 <style>
   body {
-    background: #111;
-    color: #fff;
-    font-family: Arial, sans-serif;
+    background: #222;
+    color: white;
     text-align: center;
-    padding-top: 80px;
+    padding-top: 100px;
   }
   button {
-    background: #f6b511;
+    padding: 20px 30px;
+    font-size: 22px;
+    background: orange;
     border: none;
-    padding: 16px 26px;
-    font-size: 20px;
-    border-radius: 10px;
+    border-radius: 14px;
     cursor: pointer;
   }
 </style>
@@ -26,26 +23,16 @@
 
 <body>
 
-<h1>Test audio Safari</h1>
+<h1>Test kliknięcia w Safari</h1>
 
-<button id="playBtn">PLAY</button>
-
-<audio id="audio"></audio>
+<button id="b">KLIKNIJ MNIE</button>
 
 <script>
-const btn = document.getElementById('playBtn');
-const audio = document.getElementById('audio');
+console.log('JS działa i został załadowany');
 
-btn.addEventListener('click', () => {
-    audio.src = '001_es.mp3'; 
-    audio.load(); 
-    audio.play()
-        .then(() => {
-            btn.textContent = 'PAUSE';
-        })
-        .catch(err => {
-            console.log('Error:', err);
-        });
+document.getElementById('b').addEventListener('click', () => {
+    console.log('Safari widzi kliknięcie');
+    alert('Safari widzi kliknięcie');
 });
 </script>
 
