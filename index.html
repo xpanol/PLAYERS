@@ -32,11 +32,11 @@
     font-size: 28px;
     padding: 2px;
     transition: color 0.2s;
+    margin-right: 12px; /* większy odstęp między słowami */
   }
 
   .highlight {
     color: #f8ac10;
-    font-weight: bold;
   }
 
   .karaoke-line {
@@ -109,7 +109,7 @@ async function loadKaraoke(audioFile, jsonFile, container) {
 
       words.forEach((word, j) => {
         const span = document.createElement('span');
-        span.textContent = word + ' ';
+        span.textContent = word;
         span.dataset.start = (start + j * wordDuration).toFixed(2);
         span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
         span.id = `${audioFile}-word-${i}-${j}`;
@@ -118,8 +118,8 @@ async function loadKaraoke(audioFile, jsonFile, container) {
       });
     });
 
-    playerDiv.appendChild(controlsDiv);   
-    playerDiv.appendChild(karaokeDiv);    
+    playerDiv.appendChild(controlsDiv);
+    playerDiv.appendChild(karaokeDiv);
     container.appendChild(playerDiv);
 
     playBtn.addEventListener('click', () => {
@@ -146,14 +146,14 @@ async function loadKaraoke(audioFile, jsonFile, container) {
 }
 
 const playersContainer = document.getElementById('players');
-const files = Array.from({ length: 30 }, (_, i) => i + 1); // od 1 do 30
 
-files.forEach(i => {
+// Stała kolejność 001–030
+for (let i = 1; i <= 30; i++) {
   const num = i.toString().padStart(3, '0');
   const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
   const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
   loadKaraoke(audioFile, jsonFile, playersContainer);
-});
+}
 </script>
 
 </body>
