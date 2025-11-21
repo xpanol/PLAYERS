@@ -44,11 +44,11 @@
   }
 
   .highlight-es {
-    color: #F8AC10; /* podświetlenie dla starych zdań */
+    color: #F8AC10; /* stare zdania */
   }
 
   .highlight-z {
-    color: #c63843; /* podświetlenie dla nowych zdań */
+    color: #c63843; /* nowe zdania */
   }
 
   .completed {
@@ -192,38 +192,33 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     });
 
-    return true; // ważne dla sekwencji
-
   } catch (err) {
     console.error('Error al cargar karaoke:', err);
   }
 }
 
-// Funkcja sekwencyjnego ładowania, aby kolejność była zawsze taka sama
-async function loadAllKaraoke(container) {
-  const total = 30;
-  for (let i = 1; i <= total; i++) {
-    const num = i.toString().padStart(3,'0');
+const playersContainer = document.getElementById('players');
 
-    // stare zdania
-    await loadKaraoke(
-      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
-      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
-      container,
-      'es'
-    );
+// Stała kolejność: stary i nowy player na przemian
+for (let i = 1; i <= 30; i++) {
+  const num = i.toString().padStart(3,'0');
 
-    // nowe zdania
-    await loadKaraoke(
-      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
-      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
-      container,
-      'z'
-    );
-  }
+  // stare zdania (ES)
+  loadKaraoke(
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
+    playersContainer,
+    'es'
+  );
+
+  // nowe zdania (EN)
+  loadKaraoke(
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
+    playersContainer,
+    'z'
+  );
 }
-
-loadAllKaraoke(document.getElementById('players'));
 </script>
 
 </body>
