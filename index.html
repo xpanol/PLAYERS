@@ -25,40 +25,6 @@
     color: #F8AC10;
   }
 
-  /* Pasek ładowania */
-  #loading-container {
-    width: 100%;
-    height: 40px;
-    position: relative;
-    margin-bottom: 30px;
-  }
-
-  #loading-bar {
-    width: 100%;
-    height: 100%;
-    background-color: black;
-    border-radius: 8px;
-    position: relative;
-  }
-
-  #loading-fill {
-    width: 0%;
-    height: 100%;
-    background-color: #F8AC10;
-    position: relative;
-    transition: width 0.3s linear;
-  }
-
-  #loading-logo {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 40px;
-    left: calc(0% - 20px); /* start przy lewej krawędzi paska */
-    transition: left 0.3s linear;
-    z-index: 2;
-  }
-
   .player {
     margin-bottom: 40px;
     display: flex;
@@ -71,7 +37,7 @@
     font-size: 28px;
     display: flex;
     align-items: center;
-    gap: 16px; 
+    gap: 16px;
   }
 
   .word {
@@ -105,12 +71,44 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 15px; 
+    margin-right: 15px;
     flex-shrink: 0;
   }
 
   .time, .progress {
     display: none;
+  }
+
+  /* Pasek postępu ładowania */
+  #loading-bar-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 20px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+  }
+
+  #loading-bar {
+    height: 100%;
+    width: 0%;
+    background: #F8AC10;
+    position: relative;
+  }
+
+  #loading-logo {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    height: 30px;
+    width: auto;
   }
 </style>
 </head>
@@ -118,148 +116,138 @@
 
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<div id="loading-container">
+<div id="loading-bar-container">
   <div id="loading-bar">
-    <div id="loading-fill"></div>
-    <img src="logo.png" id="loading-logo" alt="logo">
+    <img src="logobar.png" id="loading-logo" alt="Logo Paska">
   </div>
 </div>
 
 <div id="players"></div>
 
 <script>
-const totalPlayers = 30;
-let loadedPlayers = 0;
-const loadingFill = document.getElementById('loading-fill');
-const loadingLogo = document.getElementById('loading-logo');
-const loadingContainer = document.getElementById('loading-container');
+async function createPlayer(audioFile, data, container) {
+  const playerDiv = document.createElement('div');
+  playerDiv.className = 'player';
 
-async function loadKaraoke(audioFile, jsonFile, container) {
-  try {
-    const res = await fetch(jsonFile);
-    if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
-    const data = await res.json();
+  const controlsDiv = document.createElement('div');
+  controlsDiv.className = 'audio-container';
 
-    const playerDiv = document.createElement('div');
-    playerDiv.className = 'player';
+  const playBtn = document.createElement('button');
+  playBtn.textContent = '▶';
+  controlsDiv.appendChild(playBtn);
 
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'audio-container';
+  const karaokeDiv = document.createElement('div');
+  karaokeDiv.className = 'karaoke-line';
 
-    const playBtn = document.createElement('button');
-    playBtn.textContent = '▶';
-    controlsDiv.appendChild(playBtn);
+  const wordsArray = [];
+  data.forEach(item => {
+    const words = item.text.split(' ');
+    const start = parseFloat(item.start.split(':').reduce((acc,time)=>60*acc+ +time));
+    const end = parseFloat(item.end.split(':').reduce((acc,time)=>60*acc+ +time));
+    const duration = end-start;
+    const wordDuration = duration/words.length;
 
-    const karaokeDiv = document.createElement('div');
-    karaokeDiv.className = 'karaoke-line';
-
-    const wordsArray = [];
-
-    data.forEach((item) => {
-      const words = item.text.split(' ');
-      const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
-      const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
-      const duration = end - start;
-      const wordDuration = duration / words.length;
-
-      words.forEach((word, j) => {
-        const span = document.createElement('span');
-        span.textContent = word;
-        span.dataset.start = (start + j * wordDuration).toFixed(2);
-        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-        span.className = 'word';
-        karaokeDiv.appendChild(span);
-        wordsArray.push(span);
-      });
+    words.forEach((word,j)=>{
+      const span = document.createElement('span');
+      span.textContent = word;
+      span.dataset.start = (start+j*wordDuration).toFixed(2);
+      span.dataset.end = (start+(j+1)*wordDuration).toFixed(2);
+      span.className = 'word';
+      karaokeDiv.appendChild(span);
+      wordsArray.push(span);
     });
+  });
 
-    playerDiv.appendChild(controlsDiv);
-    playerDiv.appendChild(karaokeDiv);
-    container.appendChild(playerDiv);
+  playerDiv.appendChild(controlsDiv);
+  playerDiv.appendChild(karaokeDiv);
+  container.appendChild(playerDiv);
 
-    const audio = document.createElement('audio');
-    audio.src = audioFile;
+  const audio = document.createElement('audio');
+  audio.src = audioFile;
 
-    let rafId = null;
-    let completed = false;
+  let rafId = null;
+  let completed = false;
 
-    function highlightLoop() {
-      const t = audio.currentTime;
-      wordsArray.forEach(span => {
-        const start = parseFloat(span.dataset.start);
-        const end = parseFloat(span.dataset.end);
-        span.classList.remove('highlight');
-        if(t >= start && t <= end){
-          span.classList.add('highlight');
-        }
-      });
+  function highlightLoop() {
+    const t = audio.currentTime;
 
-      if(t >= audio.duration){
-        completed = true;
-        wordsArray.forEach(span => span.classList.remove('highlight'));
-        wordsArray.forEach(span => span.classList.add('completed'));
-        playBtn.textContent = '▶';
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      } else if(!audio.paused) {
-        rafId = requestAnimationFrame(highlightLoop);
-      }
-    }
-
-    playBtn.addEventListener('click', () => {
-      if(completed){
-        wordsArray.forEach(span => { 
-          span.classList.remove('completed');
-          span.classList.remove('highlight');
-        });
-        audio.currentTime = 0;
-        completed = false;
-      }
-
-      if(audio.paused){
-        audio.play();
-        playBtn.textContent = '❚❚';
-        if(!rafId) rafId = requestAnimationFrame(highlightLoop);
-      } else {
-        audio.pause();
-        playBtn.textContent = '▶';
-        if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+    wordsArray.forEach(span=>{
+      const start=parseFloat(span.dataset.start);
+      const end=parseFloat(span.dataset.end);
+      span.classList.remove('highlight');
+      if(t>=start && t<=end){
+        span.classList.add('highlight');
       }
     });
 
-    audio.addEventListener('ended', () => {
+    if(t>=audio.duration){
       completed = true;
-      wordsArray.forEach(span => span.classList.remove('highlight'));
-      wordsArray.forEach(span => span.classList.add('completed'));
-      playBtn.textContent = '▶';
-      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
-    });
-
-    // Aktualizacja paska postępu
-    loadedPlayers++;
-    const progressPercent = (loadedPlayers / totalPlayers) * 100;
-    loadingFill.style.width = progressPercent + '%';
-    loadingLogo.style.left = `calc(${progressPercent}% - 20px)`; // przyczepione do prawej krawędzi wypełnienia
-
-    if(loadedPlayers === totalPlayers){
-      setTimeout(() => {
-        loadingContainer.style.display = 'none';
-      }, 500);
+      wordsArray.forEach(span=>span.classList.remove('highlight'));
+      wordsArray.forEach(span=>span.classList.add('completed'));
+      playBtn.textContent='▶';
+      cancelAnimationFrame(rafId);
+      rafId=null;
+    } else if(!audio.paused){
+      rafId=requestAnimationFrame(highlightLoop);
     }
-
-  } catch (err) {
-    console.error('Error al cargar karaoke:', err);
   }
+
+  playBtn.addEventListener('click',()=>{
+    if(completed){
+      wordsArray.forEach(span=>{
+        span.classList.remove('completed');
+        span.classList.remove('highlight');
+      });
+      audio.currentTime=0;
+      completed=false;
+    }
+    if(audio.paused){
+      audio.play();
+      playBtn.textContent='❚❚';
+      if(!rafId) rafId=requestAnimationFrame(highlightLoop);
+    } else{
+      audio.pause();
+      playBtn.textContent='▶';
+      if(rafId){ cancelAnimationFrame(rafId); rafId=null;}
+    }
+  });
+
+  audio.addEventListener('ended',()=>{
+    completed=true;
+    wordsArray.forEach(span=>span.classList.remove('highlight'));
+    wordsArray.forEach(span=>span.classList.add('completed'));
+    playBtn.textContent='▶';
+    if(rafId){ cancelAnimationFrame(rafId); rafId=null;}
+  });
 }
 
-const playersContainer = document.getElementById('players');
+(async function(){
+  const playersContainer = document.getElementById('players');
+  const loadingBar = document.getElementById('loading-bar');
+  const loadingLogo = document.getElementById('loading-logo');
+  const total = 30;
+  const loadedData = [];
 
-for(let i=1;i<=totalPlayers;i++){
-  const num = i.toString().padStart(3,'0');
-  const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
-  const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
-  loadKaraoke(audioFile,jsonFile,playersContainer);
-}
+  for(let i=1;i<=total;i++){
+    const num = i.toString().padStart(3,'0');
+    const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
+    const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
+
+    const res = await fetch(jsonFile);
+    const data = await res.json();
+    loadedData.push({audioFile, data});
+
+    const percent = (i/total)*100;
+    loadingBar.style.width = percent + '%';
+    loadingLogo.style.left = percent + '%';
+  }
+
+  loadedData.forEach(item=>{
+    createPlayer(item.audioFile, item.data, playersContainer);
+  });
+
+  document.getElementById('loading-bar-container').style.display='none';
+})();
 </script>
 
 </body>
