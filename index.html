@@ -12,10 +12,10 @@
     max-width: 1000px;
     margin: 50px auto;
     padding: 20px;
-    background-image: url('https://raw.githubusercontent.com/xpanol/PLAYERS/main/logo.png');
-    background-size: contain;
+    background-image: url('https://raw.githubusercontent.com/xpanol/PLAYERS/main/logo.png'); /* logo jako tło */
     background-repeat: no-repeat;
     background-position: center top;
+    background-size: contain;
   }
 
   h1 {
@@ -37,7 +37,7 @@
     font-size: 28px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 16px; /* większy odstęp między słowami */
   }
 
   .word {
@@ -71,14 +71,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 15px;
+    margin-right: 15px; /* lekko odsunięty od zdania */
+    flex-shrink: 0;
   }
 
-  input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin-left: 10px;
-    cursor: pointer;
+  .time, .progress {
+    display: none;
   }
 </style>
 </head>
@@ -89,7 +87,7 @@
 <div id="players"></div>
 
 <script>
-async function loadKaraoke(audioFile, jsonFile, container, index) {
+async function loadKaraoke(audioFile, jsonFile, container) {
   try {
     const res = await fetch(jsonFile);
     if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
@@ -97,12 +95,6 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
 
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
-
-    // Checkbox "przyswojone"
-    const check = document.createElement('input');
-    check.type = 'checkbox';
-    check.title = 'Oznacz jako przyswojone';
-    playerDiv.appendChild(check);
 
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'audio-container';
@@ -116,7 +108,7 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
 
     const wordsArray = [];
 
-    data.forEach((item, i) => {
+    data.forEach((item) => {
       const words = item.text.split(' ');
       const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
       const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
@@ -149,20 +141,19 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
       wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
+        span.classList.remove('highlight');
         if(t >= start && t <= end){
           span.classList.add('highlight');
-        } else {
-          span.classList.remove('highlight');
         }
       });
-      if(t >= audio.duration) {
+      if(t >= audio.duration){
         completed = true;
         wordsArray.forEach(span => span.classList.remove('highlight'));
         wordsArray.forEach(span => span.classList.add('completed'));
         playBtn.textContent = '▶';
         cancelAnimationFrame(rafId);
         rafId = null;
-      } else {
+      } else if(!audio.paused) {
         rafId = requestAnimationFrame(highlightLoop);
       }
     }
@@ -170,8 +161,8 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
     playBtn.addEventListener('click', () => {
       if(completed){
         wordsArray.forEach(span => { 
-          span.classList.remove('completed'); 
-          span.style.color = 'white';
+          span.classList.remove('completed');
+          span.classList.remove('highlight');
         });
         audio.currentTime = 0;
         completed = false;
@@ -188,15 +179,12 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
       }
     });
 
-    check.addEventListener('change', () => {
-      if(check.checked){
-        wordsArray.forEach(span => span.classList.add('completed'));
-      } else {
-        wordsArray.forEach(span => {
-          span.classList.remove('completed');
-          span.style.color = 'white';
-        });
-      }
+    audio.addEventListener('ended', () => {
+      completed = true;
+      wordsArray.forEach(span => span.classList.remove('highlight'));
+      wordsArray.forEach(span => span.classList.add('completed'));
+      playBtn.textContent = '▶';
+      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     });
 
   } catch (err) {
@@ -211,7 +199,7 @@ files.forEach(i => {
   const num = i.toString().padStart(3,'0');
   const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
   const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
-  loadKaraoke(audioFile, jsonFile, playersContainer, i);
+  loadKaraoke(audioFile, jsonFile, playersContainer);
 });
 </script>
 
