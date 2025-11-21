@@ -25,6 +25,39 @@
     color: #F8AC10;
   }
 
+  /* Pasek ładowania */
+  #loading-container {
+    width: 100%;
+    height: 40px;
+    position: relative;
+    margin-bottom: 30px;
+  }
+
+  #loading-bar {
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  #loading-fill {
+    width: 0%;
+    height: 100%;
+    background-color: #F8AC10;
+    position: relative;
+    transition: width 0.3s linear;
+  }
+
+  #loading-logo {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translate(50%, -50%);
+    height: 40px;
+  }
+
   .player {
     margin-bottom: 40px;
     display: flex;
@@ -37,7 +70,7 @@
     font-size: 28px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 16px; 
   }
 
   .word {
@@ -71,43 +104,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 15px;
+    margin-right: 15px; 
     flex-shrink: 0;
   }
 
   .time, .progress {
     display: none;
-  }
-
-  /* Pasek ładowania */
-  #loading-container {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    height: 30px;
-    background-color: #333;
-    border-radius: 15px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    z-index: 999;
-  }
-
-  #loading-bar {
-    height: 100%;
-    width: 0;
-    background-color: #F8AC10;
-    position: relative;
-  }
-
-  #loading-logo {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translate(-50%, -50%);
-    height: 28px;
   }
 </style>
 </head>
@@ -117,30 +119,27 @@
 
 <div id="loading-container">
   <div id="loading-bar">
-    <img src="logo.png" id="loading-logo" alt="logo">
+    <div id="loading-fill">
+      <img src="logo.png" id="loading-logo" alt="logo">
+    </div>
   </div>
 </div>
 
-<div id="players">
-  <script>
-    for(let i=1;i<=30;i++){
-      const div = document.createElement('div');
-      div.id = 'player-' + i.toString().padStart(3,'0');
-      document.getElementById('players').appendChild(div);
-    }
-  </script>
-</div>
+<div id="players"></div>
 
 <script>
-let loadedCount = 0;
+const totalPlayers = 30;
+let loadedPlayers = 0;
+const loadingFill = document.getElementById('loading-fill');
+const loadingContainer = document.getElementById('loading-container');
 
-async function loadKaraoke(audioFile, jsonFile, containerId) {
+async function loadKaraoke(audioFile, jsonFile, container) {
   try {
     const res = await fetch(jsonFile);
-    if(!res.ok) throw new Error(`No se encontró ${jsonFile}`);
+    if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
     const data = await res.json();
 
-    const playerDiv = document.getElementById(containerId);
+    const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
     const controlsDiv = document.createElement('div');
@@ -157,16 +156,16 @@ async function loadKaraoke(audioFile, jsonFile, containerId) {
 
     data.forEach((item) => {
       const words = item.text.split(' ');
-      const start = parseFloat(item.start.split(':').reduce((acc,time)=>60*acc + +time));
-      const end = parseFloat(item.end.split(':').reduce((acc,time)=>60*acc + +time));
+      const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
+      const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
       const duration = end - start;
       const wordDuration = duration / words.length;
 
-      words.forEach((word,j)=>{
+      words.forEach((word, j) => {
         const span = document.createElement('span');
         span.textContent = word;
-        span.dataset.start = (start + j*wordDuration).toFixed(2);
-        span.dataset.end = (start + (j+1)*wordDuration).toFixed(2);
+        span.dataset.start = (start + j * wordDuration).toFixed(2);
+        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
         span.className = 'word';
         karaokeDiv.appendChild(span);
         wordsArray.push(span);
@@ -175,6 +174,7 @@ async function loadKaraoke(audioFile, jsonFile, containerId) {
 
     playerDiv.appendChild(controlsDiv);
     playerDiv.appendChild(karaokeDiv);
+    container.appendChild(playerDiv);
 
     const audio = document.createElement('audio');
     audio.src = audioFile;
@@ -182,83 +182,82 @@ async function loadKaraoke(audioFile, jsonFile, containerId) {
     let rafId = null;
     let completed = false;
 
-    function highlightLoop(){
+    function highlightLoop() {
       const t = audio.currentTime;
-      wordsArray.forEach(span=>{
+      wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
         span.classList.remove('highlight');
-        if(t>=start && t<=end) span.classList.add('highlight');
+        if(t >= start && t <= end){
+          span.classList.add('highlight');
+        }
       });
-      if(t>=audio.duration){
+
+      if(t >= audio.duration){
         completed = true;
-        wordsArray.forEach(span=>span.classList.remove('highlight'));
-        wordsArray.forEach(span=>span.classList.add('completed'));
+        wordsArray.forEach(span => span.classList.remove('highlight'));
+        wordsArray.forEach(span => span.classList.add('completed'));
         playBtn.textContent = '▶';
         cancelAnimationFrame(rafId);
-        rafId=null;
-      } else if(!audio.paused){
-        rafId=requestAnimationFrame(highlightLoop);
+        rafId = null;
+      } else if(!audio.paused) {
+        rafId = requestAnimationFrame(highlightLoop);
       }
     }
 
-    playBtn.addEventListener('click',()=>{
+    playBtn.addEventListener('click', () => {
       if(completed){
-        wordsArray.forEach(span=>{
+        wordsArray.forEach(span => { 
           span.classList.remove('completed');
           span.classList.remove('highlight');
         });
-        audio.currentTime=0;
-        completed=false;
+        audio.currentTime = 0;
+        completed = false;
       }
 
       if(audio.paused){
         audio.play();
-        playBtn.textContent='❚❚';
-        if(!rafId) rafId=requestAnimationFrame(highlightLoop);
+        playBtn.textContent = '❚❚';
+        if(!rafId) rafId = requestAnimationFrame(highlightLoop);
       } else {
         audio.pause();
-        playBtn.textContent='▶';
-        if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+        playBtn.textContent = '▶';
+        if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
       }
     });
 
-    audio.addEventListener('ended',()=>{
-      completed=true;
-      wordsArray.forEach(span=>span.classList.remove('highlight'));
-      wordsArray.forEach(span=>span.classList.add('completed'));
-      playBtn.textContent='▶';
-      if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    audio.addEventListener('ended', () => {
+      completed = true;
+      wordsArray.forEach(span => span.classList.remove('highlight'));
+      wordsArray.forEach(span => span.classList.add('completed'));
+      playBtn.textContent = '▶';
+      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     });
 
-    // Aktualizacja paska ładowania
-    loadedCount++;
-    const progress = loadedCount/30;
-    const bar = document.getElementById('loading-bar');
-    bar.style.width = (progress*100) + '%';
+    // Aktualizacja paska postępu
+    loadedPlayers++;
+    const progressPercent = (loadedPlayers / totalPlayers) * 100;
+    loadingFill.style.width = progressPercent + '%';
 
-    const logo = document.getElementById('loading-logo');
-    // logo na początku paska i przesuwane wraz z szerokością paska
-    logo.style.left = (progress*100) + '%';
-
-    if(loadedCount===30){
-      setTimeout(()=>{
-        document.getElementById('loading-container').style.display='none';
-      },500);
+    if(loadedPlayers === totalPlayers){
+      setTimeout(() => {
+        loadingContainer.style.display = 'none';
+      }, 500); // drobne opóźnienie, żeby logo nie znikło od razu
     }
 
-  } catch(err){
-    console.error('Error al cargar karaoke:',err);
+  } catch (err) {
+    console.error('Error al cargar karaoke:', err);
   }
 }
 
-const files = Array.from({length:30},(_,i)=>i+1);
-files.forEach(i=>{
-  const num=i.toString().padStart(3,'0');
-  const audioFile=`https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
-  const jsonFile=`https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
-  loadKaraoke(audioFile,jsonFile,'player-'+num);
-});
+const playersContainer = document.getElementById('players');
+
+for(let i=1;i<=totalPlayers;i++){
+  const num = i.toString().padStart(3,'0');
+  const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
+  const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
+  loadKaraoke(audioFile,jsonFile,playersContainer);
+}
 </script>
 
 </body>
