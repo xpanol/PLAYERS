@@ -10,13 +10,12 @@
     background-color: black;
     color: white;
     max-width: 1000px;
-    margin:50px auto;
+    margin: 50px auto;
     padding: 20px;
   }
 
   h1 {
     text-align: center;
-    font-family: 'Special Elite', monospace;
     margin-bottom: 40px;
     color: #F8AC10;
   }
@@ -24,8 +23,8 @@
   .player {
     margin-bottom: 40px;
     display: flex;
-    align-items: flex-start;
-    gap: 15px;
+    align-items: center; /* przycisk i tekst w jednej linii */
+    gap: 15px; /* odstęp między przyciskiem a tekstem */
   }
 
   .karaoke-line {
@@ -33,7 +32,7 @@
     font-size: 28px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px; /* większy odstęp między słowami */
   }
 
   .word {
@@ -48,13 +47,6 @@
     color: #9b835a;
   }
 
-  .audio-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
   button {
     font-family: 'Special Elite', monospace;
     background: #F8AC10;
@@ -63,12 +55,19 @@
     cursor: pointer;
     width: 45px;
     height: 45px;
-    border-radius: 50%;
+    border-radius: 50%; /* zawsze idealne koło */
     font-size: 22px;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0;
+    flex-shrink: 0;
+    margin-right: 12px; /* lekki odstęp od tekstu */
+  }
+
+  .audio-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
   }
 
   .time, .progress {
@@ -92,22 +91,15 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
-    const audio = document.createElement('audio');
-    audio.src = audioFile;
-
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'audio-container';
-
     const playBtn = document.createElement('button');
     playBtn.textContent = '▶';
-    controlsDiv.appendChild(playBtn);
 
     const karaokeDiv = document.createElement('div');
     karaokeDiv.className = 'karaoke-line';
 
     const wordsArray = [];
 
-    data.forEach((item, i) => {
+    data.forEach((item) => {
       const words = item.text.split(' ');
       const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
       const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
@@ -127,26 +119,27 @@ async function loadKaraoke(audioFile, jsonFile, container) {
 
     playerDiv.appendChild(playBtn);
     playerDiv.appendChild(karaokeDiv);
-    playerDiv.appendChild(controlsDiv);
     container.appendChild(playerDiv);
+
+    const audio = document.createElement('audio');
+    audio.src = audioFile;
 
     let rafId = null;
     let completed = false;
 
     function highlightLoop() {
       const t = audio.currentTime;
-      let active = false;
       wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
         if(t >= start && t <= end){
           span.classList.add('highlight');
-          active = true;
         } else {
           span.classList.remove('highlight');
         }
       });
-      if(t >= audio.duration) {
+
+      if(t >= audio.duration){
         completed = true;
         wordsArray.forEach(span => span.classList.remove('highlight'));
         wordsArray.forEach(span => span.classList.add('completed'));
