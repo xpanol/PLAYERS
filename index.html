@@ -43,9 +43,17 @@
     transition: color 0.2s;
   }
 
-  .highlight-es { color: #F8AC10; } /* stare zdania */
-  .highlight-z { color: #c63843; }  /* nowe zdania */
-  .completed { color: #9b835a; }    /* po zakończeniu wszystkie brąz */
+  .highlight-es {
+    color: #F8AC10;
+  }
+
+  .highlight-z {
+    color: #c63843;
+  }
+
+  .completed {
+    color: #9b835a;
+  }
 
   .audio-container {
     display: flex;
@@ -70,7 +78,9 @@
     flex-shrink: 0;
   }
 
-  .time, .progress { display: none; }
+  .time, .progress {
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -85,6 +95,11 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     const res = await fetch(jsonFile);
     if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
     const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      console.error('JSON is not an array:', jsonFile);
+      return;
+    }
 
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
@@ -132,6 +147,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
     function highlightLoop() {
       const t = audio.currentTime;
+
       wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
@@ -143,12 +159,12 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
       if(t >= audio.duration){
         completed = true;
-        wordsArray.forEach(span => span.classList.remove('highlight-es','highlight-z'));
+        wordsArray.forEach(span => span.classList.remove('highlight-es', 'highlight-z'));
         wordsArray.forEach(span => span.classList.add('completed'));
         playBtn.textContent = '▶';
         cancelAnimationFrame(rafId);
         rafId = null;
-      } else if(!audio.paused){
+      } else if(!audio.paused) {
         rafId = requestAnimationFrame(highlightLoop);
       }
     }
@@ -156,7 +172,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     playBtn.addEventListener('click', () => {
       if(completed){
         wordsArray.forEach(span => { 
-          span.classList.remove('completed','highlight-es','highlight-z');
+          span.classList.remove('completed', 'highlight-es', 'highlight-z');
         });
         audio.currentTime = 0;
         completed = false;
@@ -169,16 +185,16 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       } else {
         audio.pause();
         playBtn.textContent = '▶';
-        if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+        if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
       }
     });
 
     audio.addEventListener('ended', () => {
       completed = true;
-      wordsArray.forEach(span => span.classList.remove('highlight-es','highlight-z'));
+      wordsArray.forEach(span => span.classList.remove('highlight-es', 'highlight-z'));
       wordsArray.forEach(span => span.classList.add('completed'));
       playBtn.textContent = '▶';
-      if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     });
 
   } catch (err) {
@@ -188,11 +204,12 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
 const playersContainer = document.getElementById('players');
 
-// Stała kolejność: ES i Z na przemian
-for (let i = 1; i <= 30; i++) {
+// Stała kolejność ES + Z
+const total = 30;
+for (let i = 1; i <= total; i++) {
   const num = i.toString().padStart(3,'0');
 
-  // Stary player (ES)
+  // stare zdania ES
   loadKaraoke(
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
@@ -200,7 +217,7 @@ for (let i = 1; i <= 30; i++) {
     'es'
   );
 
-  // Nowy player (Z)
+  // nowe zdania Z
   loadKaraoke(
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
