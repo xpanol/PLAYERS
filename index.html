@@ -12,10 +12,6 @@
     max-width: 1000px;
     margin: 50px auto;
     padding: 20px;
-    background-image: url('https://raw.githubusercontent.com/xpanol/PLAYERS/main/logo.png'); 
-    background-repeat: no-repeat;
-    background-position: center top;
-    background-size: contain;
   }
 
   h1 {
@@ -26,18 +22,28 @@
 
   .progress-bar-container {
     width: 100%;
-    height: 25px;
+    height: 30px;
     background: #333;
-    border-radius: 12px;
+    border-radius: 15px;
+    position: relative;
+    margin-bottom: 30px;
     overflow: hidden;
-    margin-bottom: 20px;
   }
 
-  .progress-bar {
+  .progress-bar-fill {
     height: 100%;
-    width: 0;
-    background: #F8AC10;
-    transition: width 0.2s;
+    width: 0%;
+    background: transparent; /* pasek może być przezroczysty */
+  }
+
+  .progress-logo {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%);
+    height: 40px;
+    width: auto;
+    transition: left 0.3s ease;
   }
 
   .player {
@@ -55,9 +61,17 @@
     gap: 16px;
   }
 
-  .word { transition: color 0.2s; }
-  .highlight { color: #F8AC10; }
-  .completed { color: #9b835a; }
+  .word {
+    transition: color 0.2s;
+  }
+
+  .highlight {
+    color: #F8AC10;
+  }
+
+  .completed {
+    color: #9b835a;
+  }
 
   .audio-container {
     display: flex;
@@ -82,7 +96,9 @@
     flex-shrink: 0;
   }
 
-  .time, .progress { display: none; }
+  .time, .progress {
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -90,131 +106,135 @@
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
 <div class="progress-bar-container">
-  <div class="progress-bar" id="progress-bar"></div>
+  <div class="progress-bar-fill"></div>
+  <img src="https://raw.githubusercontent.com/xpanol/PLAYERS/main/logo.png" class="progress-logo" id="progress-logo">
 </div>
 
 <div id="players"></div>
 
 <script>
-async function createPlayer(audioFile, jsonFile) {
-  const res = await fetch(jsonFile);
-  if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
-  const data = await res.json();
+const playersContainer = document.getElementById('players');
+const files = Array.from({ length: 30 }, (_, i) => i + 1);
 
-  const playerDiv = document.createElement('div');
-  playerDiv.className = 'player';
+let loadedFiles = 0;
+const totalFiles = files.length;
+const progressLogo = document.getElementById('progress-logo');
 
-  const controlsDiv = document.createElement('div');
-  controlsDiv.className = 'audio-container';
+async function loadKaraoke(audioFile, jsonFile, container) {
+  try {
+    const res = await fetch(jsonFile);
+    if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
+    const data = await res.json();
 
-  const playBtn = document.createElement('button');
-  playBtn.textContent = '▶';
-  controlsDiv.appendChild(playBtn);
+    const playerDiv = document.createElement('div');
+    playerDiv.className = 'player';
 
-  const karaokeDiv = document.createElement('div');
-  karaokeDiv.className = 'karaoke-line';
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'audio-container';
 
-  const wordsArray = [];
-  data.forEach(item => {
-    const words = item.text.split(' ');
-    const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
-    const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
-    const duration = end - start;
-    const wordDuration = duration / words.length;
+    const playBtn = document.createElement('button');
+    playBtn.textContent = '▶';
+    controlsDiv.appendChild(playBtn);
 
-    words.forEach((word, j) => {
-      const span = document.createElement('span');
-      span.textContent = word;
-      span.dataset.start = (start + j * wordDuration).toFixed(2);
-      span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-      span.className = 'word';
-      karaokeDiv.appendChild(span);
-      wordsArray.push(span);
-    });
-  });
+    const karaokeDiv = document.createElement('div');
+    karaokeDiv.className = 'karaoke-line';
 
-  playerDiv.appendChild(controlsDiv);
-  playerDiv.appendChild(karaokeDiv);
+    const wordsArray = [];
 
-  const audio = document.createElement('audio');
-  audio.src = audioFile;
+    data.forEach((item) => {
+      const words = item.text.split(' ');
+      const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
+      const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
+      const duration = end - start;
+      const wordDuration = duration / words.length;
 
-  let rafId = null;
-  let completed = false;
-
-  function highlightLoop() {
-    const t = audio.currentTime;
-    wordsArray.forEach(span => {
-      const start = parseFloat(span.dataset.start);
-      const end = parseFloat(span.dataset.end);
-      span.classList.remove('highlight');
-      if (t >= start && t <= end) span.classList.add('highlight');
+      words.forEach((word, j) => {
+        const span = document.createElement('span');
+        span.textContent = word;
+        span.dataset.start = (start + j * wordDuration).toFixed(2);
+        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
+        span.className = 'word';
+        karaokeDiv.appendChild(span);
+        wordsArray.push(span);
+      });
     });
 
-    if (t >= audio.duration) {
+    playerDiv.appendChild(controlsDiv);
+    playerDiv.appendChild(karaokeDiv);
+    container.appendChild(playerDiv);
+
+    const audio = document.createElement('audio');
+    audio.src = audioFile;
+
+    let rafId = null;
+    let completed = false;
+
+    function highlightLoop() {
+      const t = audio.currentTime;
+      wordsArray.forEach(span => {
+        const start = parseFloat(span.dataset.start);
+        const end = parseFloat(span.dataset.end);
+        span.classList.remove('highlight');
+        if(t >= start && t <= end) span.classList.add('highlight');
+      });
+
+      if(t >= audio.duration){
+        completed = true;
+        wordsArray.forEach(span => span.classList.remove('highlight'));
+        wordsArray.forEach(span => span.classList.add('completed'));
+        playBtn.textContent = '▶';
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      } else if(!audio.paused) {
+        rafId = requestAnimationFrame(highlightLoop);
+      }
+    }
+
+    playBtn.addEventListener('click', () => {
+      if(completed){
+        wordsArray.forEach(span => { 
+          span.classList.remove('completed'); 
+          span.classList.remove('highlight');
+        });
+        audio.currentTime = 0;
+        completed = false;
+      }
+
+      if(audio.paused){
+        audio.play();
+        playBtn.textContent = '❚❚';
+        if(!rafId) rafId = requestAnimationFrame(highlightLoop);
+      } else {
+        audio.pause();
+        playBtn.textContent = '▶';
+        if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+      }
+    });
+
+    audio.addEventListener('ended', () => {
       completed = true;
       wordsArray.forEach(span => span.classList.remove('highlight'));
       wordsArray.forEach(span => span.classList.add('completed'));
       playBtn.textContent = '▶';
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    } else if (!audio.paused) {
-      rafId = requestAnimationFrame(highlightLoop);
-    }
+      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+    });
+
+    // Aktualizacja paska postępu
+    loadedFiles++;
+    const percent = (loadedFiles / totalFiles) * 100;
+    progressLogo.style.left = `${percent}%`;
+
+  } catch (err) {
+    console.error('Error al cargar karaoke:', err);
   }
-
-  playBtn.addEventListener('click', () => {
-    if (completed) {
-      wordsArray.forEach(span => { 
-        span.classList.remove('completed');
-        span.classList.remove('highlight');
-      });
-      audio.currentTime = 0;
-      completed = false;
-    }
-
-    if (audio.paused) {
-      audio.play();
-      playBtn.textContent = '❚❚';
-      if (!rafId) rafId = requestAnimationFrame(highlightLoop);
-    } else {
-      audio.pause();
-      playBtn.textContent = '▶';
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    }
-  });
-
-  audio.addEventListener('ended', () => {
-    completed = true;
-    wordsArray.forEach(span => span.classList.remove('highlight'));
-    wordsArray.forEach(span => span.classList.add('completed'));
-    playBtn.textContent = '▶';
-    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-  });
-
-  return playerDiv;
 }
 
-(async function() {
-  const playersContainer = document.getElementById('players');
-  const progressBar = document.getElementById('progress-bar');
-  const totalFiles = 30;
-  let loadedFiles = 0;
-
-  for (let i = 1; i <= totalFiles; i++) {
-    const num = i.toString().padStart(3,'0');
-    const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
-    const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
-    const player = await createPlayer(audioFile, jsonFile);
-    playersContainer.appendChild(player);
-
-    loadedFiles++;
-    progressBar.style.width = `${(loadedFiles / totalFiles) * 100}%`;
-  }
-
-  // Po zakończeniu ładowania schowaj pasek
-  progressBar.parentElement.style.display = 'none';
-})();
+files.forEach(i => {
+  const num = i.toString().padStart(3,'0');
+  const audioFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`;
+  const jsonFile = `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`;
+  loadKaraoke(audioFile, jsonFile, playersContainer);
+});
 </script>
 
 </body>
