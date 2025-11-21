@@ -44,15 +44,15 @@
   }
 
   .highlight-es {
-    color: #F8AC10;
+    color: #F8AC10; /* podświetlenie dla starych zdań */
   }
 
   .highlight-z {
-    color: #c63843;
+    color: #c63843; /* podświetlenie dla nowych zdań */
   }
 
   .completed {
-    color: #9b835a;
+    color: #9b835a; /* po zakończeniu wszystkie zdania w brązie */
   }
 
   .audio-container {
@@ -96,11 +96,6 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
     const data = await res.json();
 
-    if (!Array.isArray(data)) {
-      console.error('JSON is not an array:', jsonFile);
-      return;
-    }
-
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
@@ -128,7 +123,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
         span.textContent = word;
         span.dataset.start = (start + j * wordDuration).toFixed(2);
         span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-        span.dataset.type = type;
+        span.dataset.type = type; 
         span.className = 'word';
         karaokeDiv.appendChild(span);
         wordsArray.push(span);
@@ -197,34 +192,38 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     });
 
+    return true; // ważne dla sekwencji
+
   } catch (err) {
     console.error('Error al cargar karaoke:', err);
   }
 }
 
-const playersContainer = document.getElementById('players');
+// Funkcja sekwencyjnego ładowania, aby kolejność była zawsze taka sama
+async function loadAllKaraoke(container) {
+  const total = 30;
+  for (let i = 1; i <= total; i++) {
+    const num = i.toString().padStart(3,'0');
 
-// Stała kolejność ES + Z
-const total = 30;
-for (let i = 1; i <= total; i++) {
-  const num = i.toString().padStart(3,'0');
+    // stare zdania
+    await loadKaraoke(
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
+      container,
+      'es'
+    );
 
-  // stare zdania ES
-  loadKaraoke(
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
-    playersContainer,
-    'es'
-  );
-
-  // nowe zdania Z
-  loadKaraoke(
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
-    playersContainer,
-    'z'
-  );
+    // nowe zdania
+    await loadKaraoke(
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
+      container,
+      'z'
+    );
+  }
 }
+
+loadAllKaraoke(document.getElementById('players'));
 </script>
 
 </body>
