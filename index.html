@@ -16,6 +16,7 @@
 
   h1 {
     text-align: center;
+    font-family: 'Special Elite', monospace;
     margin-bottom: 40px;
     color: #F8AC10;
   }
@@ -23,8 +24,8 @@
   .player {
     margin-bottom: 40px;
     display: flex;
-    align-items: center; /* przycisk i tekst w jednej linii */
-    gap: 15px; /* odstęp między przyciskiem a tekstem */
+    align-items: center;
+    gap: 15px;
   }
 
   .karaoke-line {
@@ -47,6 +48,12 @@
     color: #9b835a;
   }
 
+  .audio-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
   button {
     font-family: 'Special Elite', monospace;
     background: #F8AC10;
@@ -55,19 +62,13 @@
     cursor: pointer;
     width: 45px;
     height: 45px;
-    border-radius: 50%; /* zawsze idealne koło */
+    border-radius: 50%;
     font-size: 22px;
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-right: 15px; /* lekko odsunięty od zdania */
     flex-shrink: 0;
-    margin-right: 12px; /* lekki odstęp od tekstu */
-  }
-
-  .audio-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
   }
 
   .time, .progress {
@@ -91,8 +92,12 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'audio-container';
+
     const playBtn = document.createElement('button');
     playBtn.textContent = '▶';
+    controlsDiv.appendChild(playBtn);
 
     const karaokeDiv = document.createElement('div');
     karaokeDiv.className = 'karaoke-line';
@@ -117,7 +122,7 @@ async function loadKaraoke(audioFile, jsonFile, container) {
       });
     });
 
-    playerDiv.appendChild(playBtn);
+    playerDiv.appendChild(controlsDiv);
     playerDiv.appendChild(karaokeDiv);
     container.appendChild(playerDiv);
 
@@ -129,13 +134,15 @@ async function loadKaraoke(audioFile, jsonFile, container) {
 
     function highlightLoop() {
       const t = audio.currentTime;
+      let active = false;
+
       wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
+        span.classList.remove('highlight');
         if(t >= start && t <= end){
           span.classList.add('highlight');
-        } else {
-          span.classList.remove('highlight');
+          active = true;
         }
       });
 
@@ -146,21 +153,23 @@ async function loadKaraoke(audioFile, jsonFile, container) {
         playBtn.textContent = '▶';
         cancelAnimationFrame(rafId);
         rafId = null;
-      } else {
+      } else if(!audio.paused) {
         rafId = requestAnimationFrame(highlightLoop);
       }
     }
 
     playBtn.addEventListener('click', () => {
+      // Reset słów przed nowym odtworzeniem
       if(completed){
         wordsArray.forEach(span => { 
-          span.classList.remove('completed'); 
-          span.style.color = 'white';
+          span.classList.remove('completed');
+          span.classList.remove('highlight');
         });
         audio.currentTime = 0;
         completed = false;
       }
 
+      // Przy każdym kliknięciu zawsze restart highlightLoop
       if(audio.paused){
         audio.play();
         playBtn.textContent = '❚❚';
@@ -170,6 +179,15 @@ async function loadKaraoke(audioFile, jsonFile, container) {
         playBtn.textContent = '▶';
         if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
       }
+    });
+
+    // Dodatkowo, gdy użytkownik skończy odtwarzanie ręcznie
+    audio.addEventListener('ended', () => {
+      completed = true;
+      wordsArray.forEach(span => span.classList.remove('highlight'));
+      wordsArray.forEach(span => span.classList.add('completed'));
+      playBtn.textContent = '▶';
+      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     });
 
   } catch (err) {
