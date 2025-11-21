@@ -20,32 +20,35 @@
     color: #F8AC10;
   }
 
+  /* Pasek postępu */
   .progress-bar-container {
     width: 100%;
-    height: 30px;
+    height: 20px;
     background: #333;
-    border-radius: 15px;
+    border-radius: 10px;
     position: relative;
     margin-bottom: 30px;
     overflow: hidden;
+    display: block;
   }
 
   .progress-bar-fill {
     height: 100%;
     width: 0%;
-    background: transparent; /* pasek może być przezroczysty */
+    background: #F8AC10;
+    transition: width 0.3s ease;
   }
 
   .progress-logo {
     position: absolute;
-    top: 50%;
+    top: -10px; /* nad paskiem */
     left: 0%;
-    transform: translate(-50%, -50%);
     height: 40px;
     width: auto;
     transition: left 0.3s ease;
   }
 
+  /* Playerzy */
   .player {
     margin-bottom: 40px;
     display: flex;
@@ -105,8 +108,8 @@
 
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<div class="progress-bar-container">
-  <div class="progress-bar-fill"></div>
+<div class="progress-bar-container" id="progress-container">
+  <div class="progress-bar-fill" id="progress-fill"></div>
   <img src="https://raw.githubusercontent.com/xpanol/PLAYERS/main/logo.png" class="progress-logo" id="progress-logo">
 </div>
 
@@ -118,7 +121,9 @@ const files = Array.from({ length: 30 }, (_, i) => i + 1);
 
 let loadedFiles = 0;
 const totalFiles = files.length;
+const progressFill = document.getElementById('progress-fill');
 const progressLogo = document.getElementById('progress-logo');
+const progressContainer = document.getElementById('progress-container');
 
 async function loadKaraoke(audioFile, jsonFile, container) {
   try {
@@ -222,7 +227,15 @@ async function loadKaraoke(audioFile, jsonFile, container) {
     // Aktualizacja paska postępu
     loadedFiles++;
     const percent = (loadedFiles / totalFiles) * 100;
+    progressFill.style.width = `${percent}%`;
     progressLogo.style.left = `${percent}%`;
+
+    // Po zakończeniu ładowania wszystkich playerów
+    if(loadedFiles === totalFiles){
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+      }, 500); // małe opóźnienie, żeby użytkownik zobaczył ostatni ruch
+    }
 
   } catch (err) {
     console.error('Error al cargar karaoke:', err);
