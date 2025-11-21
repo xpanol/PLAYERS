@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -13,6 +12,10 @@
     max-width: 1000px;
     margin: 50px auto;
     padding: 20px;
+    background-image: url('logo.png'); /* tło ze stałym logo */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
   }
 
   h1 {
@@ -33,19 +36,23 @@
     font-size: 28px;
     display: flex;
     align-items: center;
-    gap: 16px; /* większy odstęp między słowami */
+    gap: 16px;
   }
 
   .word {
     transition: color 0.2s;
   }
 
-  .highlight {
-    /* kolor będzie ustawiany dynamicznie w JS w zależności od typu */
+  .highlight-es {
+    color: #F8AC10; /* podświetlenie dla starych zdań */
+  }
+
+  .highlight-z {
+    color: #c63843; /* podświetlenie dla nowych zdań */
   }
 
   .completed {
-    color: #9b835a;
+    color: #9b835a; /* po zakończeniu wszystkie zdania w brązie */
   }
 
   .audio-container {
@@ -67,7 +74,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 15px; /* lekko odsunięty od zdania */
+    margin-right: 15px;
     flex-shrink: 0;
   }
 
@@ -103,7 +110,6 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     karaokeDiv.className = 'karaoke-line';
 
     const wordsArray = [];
-    const highlightColor = type === 'z' ? '#c63843' : '#F8AC10';
 
     data.forEach((item) => {
       const words = item.text.split(' ');
@@ -117,7 +123,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
         span.textContent = word;
         span.dataset.start = (start + j * wordDuration).toFixed(2);
         span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-        span.dataset.color = highlightColor;
+        span.dataset.type = type; 
         span.className = 'word';
         karaokeDiv.appendChild(span);
         wordsArray.push(span);
@@ -140,17 +146,16 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
-        span.classList.remove('highlight');
+        span.classList.remove('highlight-es', 'highlight-z');
         if(t >= start && t <= end){
-          span.classList.add('highlight');
-          span.style.color = span.dataset.color;
+          span.classList.add(span.dataset.type === 'z' ? 'highlight-z' : 'highlight-es');
         }
       });
 
       if(t >= audio.duration){
         completed = true;
-        wordsArray.forEach(span => span.classList.remove('highlight'));
-        wordsArray.forEach(span => span.classList.add('completed'));
+        wordsArray.forEach(span => span.classList.remove('highlight-es', 'highlight-z'));
+        wordsArray.forEach(span => span.classList.add('completed')); // WSZYSTKIE w brązie
         playBtn.textContent = '▶';
         cancelAnimationFrame(rafId);
         rafId = null;
@@ -162,8 +167,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     playBtn.addEventListener('click', () => {
       if(completed){
         wordsArray.forEach(span => { 
-          span.classList.remove('completed');
-          span.classList.remove('highlight');
+          span.classList.remove('completed', 'highlight-es', 'highlight-z');
         });
         audio.currentTime = 0;
         completed = false;
@@ -182,8 +186,8 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
     audio.addEventListener('ended', () => {
       completed = true;
-      wordsArray.forEach(span => span.classList.remove('highlight'));
-      wordsArray.forEach(span => span.classList.add('completed'));
+      wordsArray.forEach(span => span.classList.remove('highlight-es', 'highlight-z'));
+      wordsArray.forEach(span => span.classList.add('completed')); // WSZYSTKIE w brązie
       playBtn.textContent = '▶';
       if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     });
@@ -195,11 +199,10 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
 const playersContainer = document.getElementById('players');
 
-// Stała kolejność: stary i nowy player na przemian
 for (let i = 1; i <= 30; i++) {
   const num = i.toString().padStart(3,'0');
 
-  // Stary player (ES)
+  // stare zdania
   loadKaraoke(
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
@@ -207,7 +210,7 @@ for (let i = 1; i <= 30; i++) {
     'es'
   );
 
-  // Nowy player (EN)
+  // nowe zdania
   loadKaraoke(
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
     `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
