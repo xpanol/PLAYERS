@@ -12,10 +12,15 @@
     max-width: 1000px;
     margin: 50px auto;
     padding: 20px;
+    background-image: url('https://raw.githubusercontent.com/xpanol/PLAYERS/main/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center top;
   }
 
   h1 {
     text-align: center;
+    font-family: 'Special Elite', monospace;
     margin-bottom: 40px;
     color: #F8AC10;
   }
@@ -33,7 +38,6 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    flex-wrap: wrap;
   }
 
   .word {
@@ -51,9 +55,10 @@
   .audio-container {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
   }
 
-  button.play-btn {
+  button {
     font-family: 'Special Elite', monospace;
     background: #F8AC10;
     border: 1px solid white;
@@ -67,22 +72,13 @@
     justify-content: center;
     align-items: center;
     margin-right: 15px;
-    flex-shrink: 0;
   }
 
-  .checkbox-container {
-    display: flex;
-    align-items: center;
-    margin-left: 15px;
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
     cursor: pointer;
-    user-select: none;
-    color: white;
-  }
-
-  .checkbox-container input {
-    margin-right: 6px;
-    width: 18px;
-    height: 18px;
   }
 </style>
 </head>
@@ -102,25 +98,22 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
-    // Kontener audio i play button
+    // Checkbox "przyswojone"
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.title = 'Oznacz jako przyswojone';
+    playerDiv.appendChild(check);
+
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'audio-container';
 
     const playBtn = document.createElement('button');
-    playBtn.className = 'play-btn';
     playBtn.textContent = '▶';
     controlsDiv.appendChild(playBtn);
 
-    // Checkbox do oznaczania zdania
-    const checkboxDiv = document.createElement('label');
-    checkboxDiv.className = 'checkbox-container';
-    checkboxDiv.innerHTML = `<input type="checkbox"> Przyswojone`;
-    controlsDiv.appendChild(checkboxDiv);
-    const checkboxInput = checkboxDiv.querySelector('input');
-
-    // Karaoke div
     const karaokeDiv = document.createElement('div');
     karaokeDiv.className = 'karaoke-line';
+
     const wordsArray = [];
 
     data.forEach((item, i) => {
@@ -153,25 +146,21 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
 
     function highlightLoop() {
       const t = audio.currentTime;
-      let active = false;
-
       wordsArray.forEach(span => {
         const start = parseFloat(span.dataset.start);
         const end = parseFloat(span.dataset.end);
         if(t >= start && t <= end){
           span.classList.add('highlight');
-          active = true;
         } else {
           span.classList.remove('highlight');
         }
       });
-
       if(t >= audio.duration) {
         completed = true;
         wordsArray.forEach(span => span.classList.remove('highlight'));
         wordsArray.forEach(span => span.classList.add('completed'));
         playBtn.textContent = '▶';
-        rafId && cancelAnimationFrame(rafId);
+        cancelAnimationFrame(rafId);
         rafId = null;
       } else {
         rafId = requestAnimationFrame(highlightLoop);
@@ -180,8 +169,10 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
 
     playBtn.addEventListener('click', () => {
       if(completed){
-        wordsArray.forEach(span => span.classList.remove('completed'));
-        wordsArray.forEach(span => span.style.color = 'white');
+        wordsArray.forEach(span => { 
+          span.classList.remove('completed'); 
+          span.style.color = 'white';
+        });
         audio.currentTime = 0;
         completed = false;
       }
@@ -197,13 +188,9 @@ async function loadKaraoke(audioFile, jsonFile, container, index) {
       }
     });
 
-    // Checkbox zmienia kolor całego zdania
-    checkboxInput.addEventListener('change', () => {
-      if(checkboxInput.checked){
-        wordsArray.forEach(span => {
-          span.classList.remove('highlight');
-          span.classList.add('completed');
-        });
+    check.addEventListener('change', () => {
+      if(check.checked){
+        wordsArray.forEach(span => span.classList.add('completed'));
       } else {
         wordsArray.forEach(span => {
           span.classList.remove('completed');
