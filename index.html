@@ -6,13 +6,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   body {
-    font-family: 'Special Elite', monospace;
+    font-family: 'Special+Elite', monospace;
     background-color: black;
     color: white;
     max-width: 1000px;
     margin: 50px auto;
     padding: 20px;
-    background-image: url('logo.png'); /* tło ze stałym logo */
+    background-image: url('logo.png');
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
@@ -44,15 +44,15 @@
   }
 
   .highlight-es {
-    color: #F8AC10; /* stare zdania */
+    color: #F8AC10;
   }
 
   .highlight-z {
-    color: #c63843; /* nowe zdania */
+    color: #c63843;
   }
 
   .completed {
-    color: #9b835a; /* po zakończeniu wszystkie zdania w brązie */
+    color: #9b835a;
   }
 
   .audio-container {
@@ -90,12 +90,15 @@
 <div id="players"></div>
 
 <script>
+// ------------------------------------------------------
+// Główna funkcja gracza
+// ------------------------------------------------------
 async function loadKaraoke(audioFile, jsonFile, container, type) {
   try {
     const res = await fetch(jsonFile);
-    if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
-    const data = await res.json();
+    if (!res.ok) throw new Error(`JSON not found: ${jsonFile}`);
 
+    const data = await res.json();
     const playerDiv = document.createElement('div');
     playerDiv.className = 'player';
 
@@ -116,14 +119,14 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
       const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
       const duration = end - start;
-      const wordDuration = duration / words.length;
+      const wDur = duration / words.length;
 
       words.forEach((word, j) => {
         const span = document.createElement('span');
         span.textContent = word;
-        span.dataset.start = (start + j * wordDuration).toFixed(2);
-        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-        span.dataset.type = type; 
+        span.dataset.start = (start + j * wDur).toFixed(2);
+        span.dataset.end = (start + (j + 1) * wDur).toFixed(2);
+        span.dataset.type = type;
         span.className = 'word';
         karaokeDiv.appendChild(span);
         wordsArray.push(span);
@@ -144,10 +147,10 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       const t = audio.currentTime;
 
       wordsArray.forEach(span => {
-        const start = parseFloat(span.dataset.start);
-        const end = parseFloat(span.dataset.end);
+        const s = parseFloat(span.dataset.start);
+        const e = parseFloat(span.dataset.end);
         span.classList.remove('highlight-es', 'highlight-z');
-        if(t >= start && t <= end){
+        if(t >= s && t <= e){
           span.classList.add(span.dataset.type === 'z' ? 'highlight-z' : 'highlight-es');
         }
       });
@@ -159,16 +162,14 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
         playBtn.textContent = '▶';
         cancelAnimationFrame(rafId);
         rafId = null;
-      } else if(!audio.paused) {
+      } else if(!audio.paused){
         rafId = requestAnimationFrame(highlightLoop);
       }
     }
 
     playBtn.addEventListener('click', () => {
       if(completed){
-        wordsArray.forEach(span => { 
-          span.classList.remove('completed', 'highlight-es', 'highlight-z');
-        });
+        wordsArray.forEach(span => span.classList.remove('completed', 'highlight-es', 'highlight-z'));
         audio.currentTime = 0;
         completed = false;
       }
@@ -193,32 +194,36 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     });
 
   } catch (err) {
-    console.error('Error al cargar karaoke:', err);
+    console.error('Error loading karaoke', err);
   }
 }
 
-const playersContainer = document.getElementById('players');
+// ------------------------------------------------------
+// STAŁA KOLEJNOŚĆ – w 100 procentach gwarantowana
+// ------------------------------------------------------
+const container = document.getElementById('players');
 
-// Stała kolejność: stary i nowy player na przemian
-for (let i = 1; i <= 30; i++) {
-  const num = i.toString().padStart(3,'0');
+async function buildPlayers() {
+  for (let i = 1; i <= 30; i++) {
+    const num = i.toString().padStart(3, '0');
 
-  // stare zdania (ES)
-  loadKaraoke(
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
-    playersContainer,
-    'es'
-  );
+    await loadKaraoke(
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
+      container,
+      'es'
+    );
 
-  // nowe zdania (EN)
-  loadKaraoke(
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
-    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
-    playersContainer,
-    'z'
-  );
+    await loadKaraoke(
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
+      `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
+      container,
+      'z'
+    );
+  }
 }
+
+buildPlayers();
 </script>
 
 </body>
