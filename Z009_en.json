@@ -1,5 +1,7 @@
-{
-  "filename": "009_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/009_en.mp3",
-  "transcription": " The content must be aligned with the brand objectives."
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:4.0",
+    "text": "The content must be aligned with the brand objectives."
+  }
+]

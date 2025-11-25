@@ -1,5 +1,7 @@
-{
-  "filename": "025_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/025_en.mp3",
-  "transcription": " Thank you for your time. We will review your proposal today."
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:4.0",
+    "text": "Thank you for your time. We will review your proposal today."
+  }
+]

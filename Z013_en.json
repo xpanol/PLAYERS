@@ -1,5 +1,7 @@
-{
-  "filename": "013_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/013_en.mp3",
-  "transcription": " I'm updating the dashboard with the latest data."
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:2.39",
+    "text": "I'm updating the dashboard with the latest data."
+  }
+]

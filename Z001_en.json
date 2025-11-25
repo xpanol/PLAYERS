@@ -1,5 +1,7 @@
-{
-  "filename": "001_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/001_en.mp3",
-  "transcription": " Good morning, shall we start the meeting?"
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:2.0",
+    "text": "Good morning, shall we start the meeting?"
+  }
+]

@@ -1,5 +1,7 @@
-{
-  "filename": "002_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/002_en.mp3",
-  "transcription": " What are the main objectives for this quarter?"
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:2.0",
+    "text": "What are the main objectives for this quarter?"
+  }
+]

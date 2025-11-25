@@ -1,5 +1,7 @@
-{
-  "filename": "006_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/006_en.mp3",
-  "transcription": " Today I will present the results of the digital campaign."
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:3.0",
+    "text": "Today I will present the results of the digital campaign."
+  }
+]

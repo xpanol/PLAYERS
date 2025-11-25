@@ -1,5 +1,7 @@
-{
-  "filename": "030_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/030_en.mp3",
-  "transcription": " That concludes the meeting. Thank you all very much."
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:2.80",
+    "text": "That concludes the meeting. Thank you all very much."
+  }
+]

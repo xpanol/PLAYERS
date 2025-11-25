@@ -1,5 +1,7 @@
-{
-  "filename": "015_en.mp3",
-  "path": "/Users/beenu/XPANOL/MP3_NA_JSON/015_en.mp3",
-  "transcription": " We could review the steps together to optimize the process."
-}
+[
+  {
+    "start": "0:0.0",
+    "end": "0:3.0",
+    "text": "We could review the steps together to optimize the process."
+  }
+]
