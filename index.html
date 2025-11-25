@@ -30,7 +30,7 @@
   /* NOWY STYL DLA PRZYCISKU "ODTWÓRZ WSZYSTKO" */
   #playAllBtn {
     font-family: 'Special Elite', monospace;
-    background: #c63843; /* Użycie koloru highlight-z dla wyróżnienia */
+    background: #c63843; /* Kolor z highlight-z, aby się wyróżniał */
     border: 1px solid white;
     color: white;
     cursor: pointer;
@@ -39,6 +39,14 @@
     border-radius: 5px;
     display: block;
     margin: 20px auto 40px auto; /* Centrowanie i odstęp */
+    transition: background 0.3s;
+    width: auto; /* Pozwolenie na automatyczną szerokość */
+    height: auto; /* Pozwolenie na automatyczną wysokość */
+  }
+  
+  #playAllBtn:disabled {
+    background: #555;
+    cursor: not-allowed;
   }
   /* --------------------------------------------- */
 
@@ -98,6 +106,12 @@
     margin-right: 15px;
     flex-shrink: 0;
   }
+  
+  /* Poprawka: upewnij się, że styl dla przycisku "Odtwórz wszystko" nie nadpisuje tego, gdy jest on włączony */
+  #playAllBtn[disabled]:not([disabled]) { 
+    width: auto;
+    height: auto;
+  }
 
   .time, .progress {
     display: none;
@@ -108,7 +122,7 @@
 
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<button id="playAllBtn">Odtwórz wszystko</button> <div id="players"></div>
+<button id="playAllBtn">Ładowanie playerów...</button> <div id="players"></div>
 
 <script>
 // Tablica do przechowywania referencji do wszystkich playerów (audio i przycisków)
@@ -186,9 +200,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
         }
       });
 
-      if(t >= audio.duration - 0.1){ // Użycie małego marginesu dla pewności
-        // MarkAsCompleted zostanie obsłużone przez event 'ended'
-      } else if(!audio.paused) {
+      if(!audio.paused) {
         rafId = requestAnimationFrame(highlightLoop);
       }
     }
@@ -203,6 +215,16 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       }
 
       if(audio.paused){
+        // Zatrzymujemy inne playery, jeśli jest kliknięty indywidualny przycisk
+        if(!isPlayingAll) {
+          allPlayers.forEach(p => {
+            if (p.audio !== audio && !p.audio.paused) {
+              p.audio.pause();
+              p.playBtn.textContent = '▶';
+            }
+          });
+        }
+        
         audio.play();
         playBtn.textContent = '❚❚';
         if(!rafId) rafId = requestAnimationFrame(highlightLoop);
@@ -270,30 +292,29 @@ async function loadAllSequentially() {
 }
 
 // ----------------------------------------------------------------------
-// NOWA FUNKCJA DO AUTOMATYCZNEGO ODTWARZANIA WSZYSTKIEJ TREŚCI
+// FUNKCJA DO AUTOMATYCZNEGO ODTWARZANIA WSZYSTKIEJ TREŚCI
 // ----------------------------------------------------------------------
 
-let isPlayingAll = false; // Flaga zapobiegająca wielokrotnemu uruchomieniu
+let isPlayingAll = false; // Flaga stanu odtwarzania sekwencyjnego
 
 function playAllSequentially(index = 0) {
   if (index >= allPlayers.length) {
     // Zakończono odtwarzanie wszystkich
     isPlayingAll = false;
-    playAllButton.textContent = 'Odtwórz wszystko';
+    playAllButton.textContent = 'Odtwórz wszystko (Zakończono)';
+    playAllButton.disabled = false;
+    return;
+  }
+
+  if (!isPlayingAll) {
+    // Przerywamy, jeśli flaga jest wyłączona (przycisk "Zatrzymaj" został kliknięty)
+    playAllButton.textContent = 'Odtwórz wszystko (Zatrzymano)';
     playAllButton.disabled = false;
     return;
   }
 
   const currentPlayer = allPlayers[index];
   
-  // Zatrzymujemy inne aktywne playery
-  allPlayers.forEach((p, i) => {
-    if (i !== index && !p.audio.paused) {
-      p.audio.pause();
-      p.playBtn.textContent = '▶';
-    }
-  });
-
   // Ustawiamy callback, który przejdzie do następnego elementu po zakończeniu
   currentPlayer.setOnEnded(() => {
     // Czyścimy callback po wywołaniu
@@ -302,24 +323,22 @@ function playAllSequentially(index = 0) {
     playAllSequentially(index + 1);
   });
   
-  // Odtwarzamy aktualny player
-  // Jeśli już jest odtwarzany, to nic nie robimy (to jest zabezpieczenie)
-  if(currentPlayer.audio.paused){
-    // Upewniamy się, że player jest w stanie gotowym do odtwarzania
-    if (currentPlayer.audio.currentTime > 0) {
-      currentPlayer.markAsCompleted(); // Resetuje i ustawia completed na false
-      currentPlayer.audio.currentTime = 0;
-    }
-    currentPlayer.audio.play();
-    currentPlayer.playBtn.textContent = '❚❚';
-    // Przewijamy stronę do aktualnie odtwarzanego elementu
-    currentPlayer.playBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Zapewnienie, że element jest od początku
+  if (currentPlayer.audio.currentTime > 0) {
+    currentPlayer.markAsCompleted(); // Zresetuje wizualny stan
+    currentPlayer.audio.currentTime = 0;
   }
+
+  // Odtwarzamy aktualny player
+  currentPlayer.audio.play();
+  currentPlayer.playBtn.textContent = '❚❚';
+  // Przewijamy stronę do aktualnie odtwarzanego elementu
+  currentPlayer.playBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 playAllButton.addEventListener('click', () => {
   if (isPlayingAll) {
-    // Jeśli odtwarzanie jest aktywne, zatrzymujemy je
+    // KLIKNIĘTO "Zatrzymaj"
     isPlayingAll = false;
     allPlayers.forEach(p => {
       if (!p.audio.paused) {
@@ -331,25 +350,30 @@ playAllButton.addEventListener('click', () => {
     playAllButton.textContent = 'Odtwórz wszystko (Zatrzymano)';
     
   } else {
-    // Rozpoczynamy odtwarzanie
+    // KLIKNIĘTO "Odtwórz wszystko"
     isPlayingAll = true;
     playAllButton.textContent = 'Zatrzymaj odtwarzanie (Auto)';
-    playAllButton.disabled = true; // Tymczasowo blokujemy podczas odtwarzania, żeby nie zepsuć sekwencji
+    playAllButton.disabled = true; 
     
-    // Włączamy z powrotem przycisk, aby można było zatrzymać
+    // Włączamy z powrotem przycisk po krótkiej chwili, aby można było zatrzymać
     setTimeout(() => {
       if(isPlayingAll){
         playAllButton.disabled = false;
       }
     }, 500);
     
+    // Resetujemy stan wszystkich playerów przed rozpoczęciem
+    allPlayers.forEach(p => {
+      p.audio.currentTime = 0;
+      p.markAsCompleted(); // Zresetuje wizualny stan
+    });
+
     playAllSequentially(0);
   }
 });
 
 // Zaczynamy od wyłączenia przycisku, zanim załadują się wszystkie pliki
 playAllButton.disabled = true;
-playAllButton.textContent = 'Ładowanie playerów...';
 
 // Właściwe ładowanie playerów
 loadAllSequentially();
