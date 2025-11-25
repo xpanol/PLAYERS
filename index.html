@@ -90,21 +90,14 @@
 <div id="players"></div>
 
 <script>
-/**
- * Zmodyfikowana funkcja loadKaraoke
- * - Nie tworzy już nowego elementu 'playerDiv'.
- * - Wstawia treść bezpośrednio do przekazanego elementu 'container'.
- * - Dodaje klasę 'player' do elementu 'container'.
- */
 async function loadKaraoke(audioFile, jsonFile, container, type) {
   try {
     const res = await fetch(jsonFile);
     if (!res.ok) throw new Error(`No se encontró ${jsonFile}`);
     const data = await res.json();
 
-    // 💡 ZMIANA: Kontener został już utworzony i wstawiony do DOM,
-    // wystarczy dodać mu klasę 'player'.
-    container.className = 'player'; 
+    const playerDiv = document.createElement('div');
+    playerDiv.className = 'player';
 
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'audio-container';
@@ -120,7 +113,6 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
     data.forEach((item) => {
       const words = item.text.split(' ');
-      // Konwersja formatu czasu 'min:sek' na sekundy
       const start = parseFloat(item.start.split(':').reduce((acc, time) => 60 * acc + +time));
       const end = parseFloat(item.end.split(':').reduce((acc, time) => 60 * acc + +time));
       const duration = end - start;
@@ -138,9 +130,9 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       });
     });
 
-    // 💡 ZMIANA: Dołączamy kontrolki i karaokeDiv bezpośrednio do przekazanego kontenera (container)
-    container.appendChild(controlsDiv);
-    container.appendChild(karaokeDiv);
+    playerDiv.appendChild(controlsDiv);
+    playerDiv.appendChild(karaokeDiv);
+    container.appendChild(playerDiv);
 
     const audio = document.createElement('audio');
     audio.src = audioFile;
@@ -202,51 +194,31 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
   } catch (err) {
     console.error('Error al cargar karaoke:', err);
-    // W przypadku błędu, możesz chcieć usunąć pusty kontener lub dodać komunikat o błędzie
-    container.innerHTML = `<span style="color: #c63843;">BŁĄD: Nie można załadować ${audioFile.split('/').pop()}</span>`;
   }
 }
 
-// ----------------------------------------------------
-// LOGIKA ZAPEWNIAJĄCA STAŁĄ KOLEJNOŚĆ W DOM
-// ----------------------------------------------------
-
 const playersContainer = document.getElementById('players');
-const tasks = []; // Tablica do zbierania obietnic ładowania (do równoległego wykonania)
 
-// Stała kolejność: para 001, para 002, ..., para 030
+// Stała kolejność: stary i nowy player na przemian
 for (let i = 1; i <= 30; i++) {
-    const num = i.toString().padStart(3,'0');
+  const num = i.toString().padStart(3,'0');
 
-    // 1. Tworzymy i wstawiamy do DOM pusty kontener dla STAREGO zdania (ES)
-    const esPlayerContainer = document.createElement('div');
-    esPlayerContainer.id = `player-es-${num}`;
-    playersContainer.appendChild(esPlayerContainer); // 🚀 SYNCHRONICZNE WSTAWIENIE
+  // stare zdania (ES)
+  loadKaraoke(
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
+    playersContainer,
+    'es'
+  );
 
-    // Dodaj asynchroniczne zadanie ładowania treści do listy
-    tasks.push(loadKaraoke(
-        `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
-        `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
-        esPlayerContainer, // Wypełnij już wstawiony kontener
-        'es'
-    ));
-
-    // 2. Tworzymy i wstawiamy do DOM pusty kontener dla NOWEGO zdania (EN)
-    const enPlayerContainer = document.createElement('div');
-    enPlayerContainer.id = `player-en-${num}`;
-    playersContainer.appendChild(enPlayerContainer); // 🚀 SYNCHRONICZNE WSTAWIENIE
-
-    // Dodaj asynchroniczne zadanie ładowania treści do listy
-    tasks.push(loadKaraoke(
-        `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
-        `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
-        enPlayerContainer, // Wypełnij już wstawiony kontener
-        'z'
-    ));
+  // nowe zdania (EN)
+  loadKaraoke(
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
+    `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
+    playersContainer,
+    'z'
+  );
 }
-
-// Uruchomienie wszystkich zadań ładowania równolegle (bez blokowania)
-Promise.all(tasks).catch(err => console.error('Błąd podczas ładowania wszystkich karaoke:', err));
 </script>
 
 </body>
