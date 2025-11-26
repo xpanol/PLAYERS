@@ -42,6 +42,7 @@
     align-items: center;
     gap: 16px;
     font-family: 'Special Elite', monospace;
+    cursor: pointer;
   }
 
   .word {
@@ -78,7 +79,6 @@
 
   .time, .progress { display: none; }
 
-  /* Botón principal "Play All" / Main "Play All" button */
   #playAllButton {
     border-radius: 5px;
     width: auto;
@@ -88,26 +88,149 @@
     margin: 0 auto 30px auto;
     display: block;
   }
+
+  /* Modal fullscreen */
+  #fullscreenModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    z-index: 99999;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 25px;
+    color: white;
+  }
+
+  #fullscreenText {
+    font-size: 34px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    text-align: center;
+  }
+
+  #fullscreenClose {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    background: #F8AC10;
+    border: 1px solid white;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    font-size: 28px;
+  }
+
+  #fullscreenPlay {
+    margin-top: 40px;
+    width: 75px;
+    height: 75px;
+    font-size: 32px;
+    border-radius: 50%;
+    background: #F8AC10;
+  }
 </style>
 </head>
 <body>
 
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<!-- Botón para reproducir todos los audios / Button to play all audios -->
 <button id="playAllButton">▶ Reproducir todo / Play All</button>
 <div id="players"></div>
+
+<!-- Modal fullscreen -->
+<div id="fullscreenModal">
+  <button id="fullscreenClose">X</button>
+  <div id="fullscreenText"></div>
+  <button id="fullscreenPlay">▶</button>
+</div>
 
 <script>
 const playerControls = [];
 let isPlayingAll = false;
 let currentTrackIndex = 0;
 
-// Función para cargar cada karaoke / Function to load each karaoke track
+// Elementos modal
+const modal = document.getElementById('fullscreenModal');
+const modalText = document.getElementById('fullscreenText');
+const modalPlayBtn = document.getElementById('fullscreenPlay');
+const modalClose = document.getElementById('fullscreenClose');
+let modalAudio = null;
+let modalWords = [];
+let modalRaf = null;
+
+// Abrir modal
+function openModal(words, audioFile, type) {
+  modal.style.display = 'flex';
+
+  modalText.innerHTML = '';
+  modalWords = [];
+
+  modalAudio = new Audio(audioFile);
+
+  const totalDuration = modalAudio.duration || 0;
+
+  words.forEach(original => {
+    const span = document.createElement('span');
+    span.textContent = original.textContent;
+    span.dataset.start = original.dataset.start;
+    span.dataset.end = original.dataset.end;
+    span.dataset.type = type;
+    span.className = 'word';
+    modalText.appendChild(span);
+    modalWords.push(span);
+  });
+
+  function loop() {
+    const t = modalAudio.currentTime;
+    modalWords.forEach(span => {
+      span.classList.remove('highlight-es', 'highlight-z');
+      const s = parseFloat(span.dataset.start);
+      const e = parseFloat(span.dataset.end);
+      if(t >= s && t <= e){
+        if(span.dataset.type === 'z') span.classList.add('highlight-z');
+        else span.classList.add('highlight-es');
+      }
+    });
+
+    if(modalAudio.paused) return;
+    modalRaf = requestAnimationFrame(loop);
+  }
+
+  modalPlayBtn.onclick = () => {
+    if(modalAudio.paused){
+      modalAudio.currentTime = 0;
+      modalAudio.play();
+      modalPlayBtn.textContent = '❚❚';
+      modalRaf = requestAnimationFrame(loop);
+    } else {
+      modalAudio.pause();
+      modalPlayBtn.textContent = '▶';
+      if(modalRaf){ cancelAnimationFrame(modalRaf); modalRaf = null; }
+    }
+  };
+}
+
+// Cerrar modal
+modalClose.onclick = () => {
+  modal.style.display = 'none';
+  if(modalAudio){
+    modalAudio.pause();
+    modalAudio = null;
+  }
+  if(modalRaf){ cancelAnimationFrame(modalRaf); modalRaf = null; }
+};
+
+// Función cargar karaoke
 async function loadKaraoke(audioFile, jsonFile, container, type) {
   try {
     const res = await fetch(jsonFile);
-    if (!res.ok) throw new Error(`No se encontró ${jsonFile} / Not found ${jsonFile}`);
+    if (!res.ok) throw new Error("No encontrado");
     const data = await res.json();
 
     const playerDiv = document.createElement('div');
@@ -117,7 +240,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     controlsDiv.className = 'audio-container';
 
     const playBtn = document.createElement('button');
-    playBtn.textContent = '▶'; // Texto del botón / Button text
+    playBtn.textContent = '▶';
     controlsDiv.appendChild(playBtn);
 
     const karaokeDiv = document.createElement('div');
@@ -127,8 +250,8 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
 
     data.forEach((item) => {
       const words = item.text.split(' ');
-      const start = item.start.split(':').reduce((acc, time) => 60 * acc + +time, 0);
-      const end = item.end.split(':').reduce((acc, time) => 60 * acc + +time, 0);
+      const start = item.start.split(':').reduce((a, b) => 60 * a + +b, 0);
+      const end = item.end.split(':').reduce((a, b) => 60 * a + +b, 0);
       const duration = end - start;
       const wordDuration = duration / words.length;
 
@@ -157,11 +280,12 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     function highlightLoop() {
       const t = audio.currentTime;
       wordsArray.forEach(span => {
-        const start = parseFloat(span.dataset.start);
-        const end = parseFloat(span.dataset.end);
         span.classList.remove('highlight-es', 'highlight-z');
-        if(t >= start && t <= end){
-          span.classList.add(span.dataset.type === 'z' ? 'highlight-z' : 'highlight-es');
+        const s = parseFloat(span.dataset.start);
+        const e = parseFloat(span.dataset.end);
+        if(t >= s && t <= e){
+          if(span.dataset.type === 'z') span.classList.add('highlight-z');
+          else span.classList.add('highlight-es');
         }
       });
 
@@ -177,16 +301,20 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       }
     }
 
-    // Botón de reproducción individual / Individual play button
+    karaokeDiv.addEventListener('click', () => {
+      if(isPlayingAll) stopAllPlayback();
+      audio.pause();
+      openModal(wordsArray, audioFile, type);
+    });
+
     playBtn.addEventListener('click', () => {
       if(completed){
         wordsArray.forEach(span => span.classList.remove('completed', 'highlight-es', 'highlight-z'));
         audio.currentTime = 0;
         completed = false;
       }
-
       if(audio.paused){
-        if(isPlayingAll) stopAllPlayback(); // Si se reproduce todo, detener / Stop play all if running
+        if(isPlayingAll) stopAllPlayback();
         audio.play();
         playBtn.textContent = '❚❚';
         if(!rafId) rafId = requestAnimationFrame(highlightLoop);
@@ -197,7 +325,6 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       }
     });
 
-    // Evento cuando finaliza la pista / Event when track ends
     audio.addEventListener('ended', () => {
       completed = true;
       wordsArray.forEach(span => span.classList.remove('highlight-es', 'highlight-z'));
@@ -205,7 +332,7 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
       playBtn.textContent = '▶';
       if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
 
-      if (isPlayingAll) { // Reproducir siguiente pista / Play next track
+      if (isPlayingAll) {
         currentTrackIndex++;
         playNextTrack();
       }
@@ -219,13 +346,12 @@ async function loadKaraoke(audioFile, jsonFile, container, type) {
     });
 
   } catch (err) {
-    console.error('Error al cargar karaoke / Error loading karaoke:', err);
+    console.error(err);
   }
 }
 
 const playersContainer = document.getElementById('players');
 
-// Orden de reproducción estable: ES → EN / Stable order: ES → EN
 const order = [];
 for (let i = 1; i <= 30; i++) {
   const num = i.toString().padStart(3,'0');
@@ -247,25 +373,22 @@ async function loadAllSequentially() {
   }
 }
 
-// Reiniciar todos los reproductores / Reset all players
 function resetAllPlayers() {
-  playerControls.forEach(control => {
-    control.audio.pause();
-    control.audio.currentTime = 0;
-    control.playBtn.textContent = '▶';
-    control.wordsArray.forEach(span => span.classList.remove('completed', 'highlight-es', 'highlight-z'));
+  playerControls.forEach(c => {
+    c.audio.pause();
+    c.audio.currentTime = 0;
+    c.playBtn.textContent = '▶';
+    c.wordsArray.forEach(span => span.classList.remove('completed', 'highlight-es', 'highlight-z'));
   });
 }
 
-// Reproducir siguiente pista automática / Play next track automatically
 function playNextTrack() {
-  const playAllButton = document.getElementById('playAllButton');
+  const btn = document.getElementById('playAllButton');
   if (currentTrackIndex < playerControls.length && isPlayingAll) {
     const current = playerControls[currentTrackIndex];
-    current.wordsArray.forEach(span => span.classList.remove('completed', 'highlight-es', 'highlight-z'));
+    current.wordsArray.forEach(s => s.classList.remove('completed', 'highlight-es', 'highlight-z'));
     current.audio.currentTime = 0;
-    current.audio.play().catch(error => {
-      console.error("Error al intentar reproducir / Error attempting play:", error);
+    current.audio.play().catch(() => {
       currentTrackIndex++;
       playNextTrack();
     });
@@ -273,24 +396,22 @@ function playNextTrack() {
     current.rafId = requestAnimationFrame(current.highlightLoop);
   } else {
     stopAllPlayback();
-    playAllButton.textContent = '✅ Todo reproducido / All played';
+    btn.textContent = '✅ Todo reproducido / All played';
     setTimeout(() => {
-      playAllButton.textContent = '▶ Reproducir todo / Play All';
+      btn.textContent = '▶ Reproducir todo / Play All';
     }, 3000);
   }
 }
 
-// Detener toda la reproducción / Stop all playback
 function stopAllPlayback() {
   isPlayingAll = false;
   document.getElementById('playAllButton').textContent = '▶ Reproducir todo / Play All';
   resetAllPlayers();
 }
 
-// Botón principal "Play All" / Main "Play All" button
 document.getElementById('playAllButton').addEventListener('click', () => {
   if (isPlayingAll) {
-    stopAllPlayback(); // Detener / Stop
+    stopAllPlayback();
   } else {
     isPlayingAll = true;
     currentTrackIndex = 0;
