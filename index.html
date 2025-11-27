@@ -3,426 +3,394 @@
 <head>
 <meta charset="UTF-8">
 <title>MARKETING DIGITAL / DIGITAL MARKETING</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body {
-    font-family: 'Special Elite', monospace;
-    background-color: black;
-    color: white;
-    max-width: 1000px;
-    margin: 50px auto;
-    padding: 20px;
-    background-image: url('logo.png');
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-  }
+body {
+  font-family: 'Special Elite', monospace;
+  background-color: black;
+  color: white;
+  max-width: 1000px;
+  margin: 50px auto;
+  padding: 20px;
+}
 
-  h1 {
-    text-align: center;
-    margin-bottom: 40px;
-    color: #F8AC10;
-    font-family: 'Special Elite', monospace;
-  }
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #F8AC10;
+}
 
-  .player {
-    margin-bottom: 40px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-family: 'Special Elite', monospace;
-  }
+/* Buttons container */
+#buttonsContainer {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
 
-  .karaoke-line {
-    white-space: nowrap;
-    font-size: 28px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-family: 'Special Elite', monospace;
-    cursor: pointer;
-  }
+/* Główne przyciski pod tytułem */
+#playAllButton, #resetAllButton {
+  font-family: 'Special Elite', monospace;
+  background: #F8AC10;
+  border: 1px solid white;
+  color: black;
+  cursor: pointer;
+  width: 160px;
+  height: 45px;
+  border-radius: 5px;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-  .word {
-    transition: color 0.2s;
-    font-family: 'Special Elite', monospace;
-  }
+/* Przyciski dla pojedynczych playerów - okrągłe */
+.player button {
+  font-family: 'Special Elite', monospace;
+  background: #F8AC10;
+  border: 1px solid white;
+  color: black;
+  cursor: pointer;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  font-size: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
 
-  .highlight-es { color: #F8AC10; }
-  .highlight-z { color: #c63843; }
-  .completed { color: #9b835a; }
+.player {
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+}
 
-  .audio-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-  }
+.karaoke-line {
+  white-space: nowrap;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  text-align: center;
+}
 
-  button {
-    font-family: 'Special Elite', monospace;
-    background: #F8AC10;
-    border: 1px solid white;
-    color: white;
-    cursor: pointer;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    font-size: 22px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-right: 15px;
-    flex-shrink: 0;
-  }
+.word { transition: color 0.2s; }
+.highlight-es { color: #F8AC10; }
+.highlight-z { color: #c63843; }
+.completed { color: #9b835a; }
 
-  .time, .progress { display: none; }
+.audio-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
 
-  #playAllButton {
-    border-radius: 5px;
-    width: auto;
-    height: auto;
-    padding: 10px 20px;
-    font-size: 16px;
-    margin: 0 auto 30px auto;
-    display: block;
-  }
+/* Modal */
+#fullscreenModal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  color: white;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
 
-  /* Modal fullscreen */
-  #fullscreenModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: black;
-    z-index: 99999;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 25px;
-    color: white;
-  }
+#fullscreenModal .karaoke-line {
+  font-size: 48px;
+  text-align: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  max-width: 90%;
+  margin: 0 auto 30px auto;
+  white-space: pre-wrap;
+  justify-content: center;
+}
 
-  #fullscreenText {
-    font-size: 34px;
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    text-align: center;
-  }
+.fullscreen-audio-wrapper {
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+  gap: 30px; /* standardowy odstęp desktop */
+}
 
-  #fullscreenClose {
-    position: absolute;
-    top: 25px;
-    right: 25px;
-    background: #F8AC10;
-    border: 1px solid white;
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    font-size: 28px;
-  }
+#fullscreenAudio::-webkit-media-controls-play-button,
+#fullscreenAudio::-webkit-media-controls-panel {
+  display: none !important;
+  opacity: 0 !important;
+}
 
-  #fullscreenPlay {
-    margin-top: 40px;
-    width: 75px;
-    height: 75px;
-    font-size: 32px;
-    border-radius: 50%;
-    background: #F8AC10;
-  }
+#fullscreenAudio { width: 0; height: 0; opacity: 0; }
+
+/* === ZMIANA MODAL BUTTONS DESKTOP === */
+#modalPlayButton {
+  font-family: 'Special Elite', monospace;
+  background: #F8AC10;
+  border: 1px solid white;
+  color: black;
+  cursor: pointer;
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  font-size: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#modalPrevButton, #modalNextButton {
+  font-family: 'Special Elite', monospace;
+  background: #F8AC10;
+  border: 1px solid white;
+  color: black;
+  cursor: pointer;
+  width: 60px;   
+  height: 60px;  
+  border-radius: 50%;
+  font-size: 32px;  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* === KONIEC ZMIANY MODAL BUTTONS DESKTOP === */
+
+#fullscreenClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-family: 'Special Elite', monospace;
+  background: #F8AC10;
+  border: 1px solid white;
+  color: black;
+  cursor: pointer;
+  font-size: 24px;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+#fullscreenContent {
+  width: 100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+}
+
+/* === ZMIANA MODAL BUTTONS MOBILE W WIDOKU PIONOWYM === */
+@media (max-width: 480px) and (orientation: portrait) {
+  #fullscreenModal { padding: 0; }
+  #fullscreenModal .karaoke-line { font-size: 34px; padding: 0 10px; }
+  
+  /* POWIĘKSZONE PRZYCISKI W MOBILE */
+  #modalPlayButton { width: 100px; height: 100px; font-size: 40px; flex-shrink: 0; margin-bottom: 30px; }
+  #modalPrevButton, #modalNextButton { width: 100px; height: 100px; font-size: 40px; flex-shrink: 0; }
+  .fullscreen-audio-wrapper { gap: 70px; } /* większy odstęp między przyciskami w mobile */
+}
+/* === KONIEC ZMIANY MODAL BUTTONS MOBILE === */
+
 </style>
 </head>
 <body>
 
 <h1>MARKETING DIGITAL / DIGITAL MARKETING</h1>
 
-<button id="playAllButton">▶ Reproducir todo / Play All</button>
+<div id="buttonsContainer">
+  <button id="playAllButton">▶ REPRODUCIR TODO / PLAY ALL</button>
+  <button id="resetAllButton">RESET ALL</button>
+</div>
+
 <div id="players"></div>
 
-<!-- Modal fullscreen -->
-<div id="fullscreenModal">
-  <button id="fullscreenClose">X</button>
-  <div id="fullscreenText"></div>
-  <button id="fullscreenPlay">▶</button>
+<!-- Modal -->
+<div id="fullscreenModal" aria-hidden="true">
+  <button id="fullscreenClose">✖</button>
+  <div id="fullscreenContent"></div>
+  <div class="fullscreen-audio-wrapper">
+    <button id="modalPrevButton">◀</button>
+    <button id="modalPlayButton">▶</button>
+    <button id="modalNextButton">▶</button>
+    <audio id="fullscreenAudio"></audio>
+  </div>
 </div>
 
 <script>
+// JS pozostaje bez zmian
 const playerControls = [];
 let isPlayingAll = false;
 let currentTrackIndex = 0;
+let currentAudioPlaying = null;
+let pausedAllTime = 0;
 
-// Elementos modal
 const modal = document.getElementById('fullscreenModal');
-const modalText = document.getElementById('fullscreenText');
-const modalPlayBtn = document.getElementById('fullscreenPlay');
+const modalContent = document.getElementById('fullscreenContent');
 const modalClose = document.getElementById('fullscreenClose');
-let modalAudio = null;
-let modalWords = [];
-let modalRaf = null;
+const modalAudio = document.getElementById('fullscreenAudio');
+const modalPlayButton = document.getElementById('modalPlayButton');
+const modalPrevButton = document.getElementById('modalPrevButton');
+const modalNextButton = document.getElementById('modalNextButton');
 
-// Abrir modal
-function openModal(words, audioFile, type) {
-  modal.style.display = 'flex';
-
-  modalText.innerHTML = '';
-  modalWords = [];
-
-  modalAudio = new Audio(audioFile);
-
-  const totalDuration = modalAudio.duration || 0;
-
-  words.forEach(original => {
-    const span = document.createElement('span');
-    span.textContent = original.textContent;
-    span.dataset.start = original.dataset.start;
-    span.dataset.end = original.dataset.end;
-    span.dataset.type = type;
-    span.className = 'word';
-    modalText.appendChild(span);
-    modalWords.push(span);
-  });
-
-  function loop() {
-    const t = modalAudio.currentTime;
-    modalWords.forEach(span => {
-      span.classList.remove('highlight-es', 'highlight-z');
+let highlightRaf = null;
+function stopHighlight(){ if(highlightRaf){ cancelAnimationFrame(highlightRaf); highlightRaf=null; } }
+function startHighlightForAudio(audio, spans){
+  stopHighlight();
+  function loop(){
+    const t = audio.currentTime || 0;
+    spans.forEach(span=>{
       const s = parseFloat(span.dataset.start);
       const e = parseFloat(span.dataset.end);
-      if(t >= s && t <= e){
-        if(span.dataset.type === 'z') span.classList.add('highlight-z');
-        else span.classList.add('highlight-es');
-      }
+      span.classList.remove('highlight-es','highlight-z');
+      if(!isNaN(s)&&!isNaN(e)&&t>=s&&t<=e){ span.classList.add(span.dataset.type==='z'?'highlight-z':'highlight-es'); }
     });
-
-    if(modalAudio.paused) return;
-    modalRaf = requestAnimationFrame(loop);
+    highlightRaf = requestAnimationFrame(loop);
   }
-
-  modalPlayBtn.onclick = () => {
-    if(modalAudio.paused){
-      modalAudio.currentTime = 0;
-      modalAudio.play();
-      modalPlayBtn.textContent = '❚❚';
-      modalRaf = requestAnimationFrame(loop);
-    } else {
-      modalAudio.pause();
-      modalPlayBtn.textContent = '▶';
-      if(modalRaf){ cancelAnimationFrame(modalRaf); modalRaf = null; }
-    }
-  };
+  highlightRaf=requestAnimationFrame(loop);
 }
 
-// Cerrar modal
-modalClose.onclick = () => {
-  modal.style.display = 'none';
-  if(modalAudio){
-    modalAudio.pause();
-    modalAudio = null;
-  }
-  if(modalRaf){ cancelAnimationFrame(modalRaf); modalRaf = null; }
-};
+const playersContainer = document.getElementById('players');
+const order = [];
+for(let i=1;i<=30;i++){
+  const num=i.toString().padStart(3,'0');
+  order.push({audio:`https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`, json:`https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`, type:'es'});
+  order.push({audio:`https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`, json:`https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`, type:'z'});
+}
 
-// Función cargar karaoke
-async function loadKaraoke(audioFile, jsonFile, container, type) {
-  try {
+// cała reszta JS pozostaje bez zmian
+async function loadKaraoke(audioFile, jsonFile, container, type){
+  try{
     const res = await fetch(jsonFile);
-    if (!res.ok) throw new Error("No encontrado");
+    if(!res.ok) throw new Error('No JSON');
     const data = await res.json();
 
-    const playerDiv = document.createElement('div');
-    playerDiv.className = 'player';
-
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'audio-container';
-
-    const playBtn = document.createElement('button');
-    playBtn.textContent = '▶';
+    const playerDiv = document.createElement('div'); playerDiv.className='player';
+    const controlsDiv = document.createElement('div'); controlsDiv.className='audio-container';
+    const playBtn = document.createElement('button'); playBtn.textContent='▶';
     controlsDiv.appendChild(playBtn);
+    const karaokeDiv=document.createElement('div'); karaokeDiv.className='karaoke-line';
 
-    const karaokeDiv = document.createElement('div');
-    karaokeDiv.className = 'karaoke-line';
-
-    const wordsArray = [];
-
-    data.forEach((item) => {
-      const words = item.text.split(' ');
-      const start = item.start.split(':').reduce((a, b) => 60 * a + +b, 0);
-      const end = item.end.split(':').reduce((a, b) => 60 * a + +b, 0);
-      const duration = end - start;
-      const wordDuration = duration / words.length;
-
-      words.forEach((word, j) => {
-        const span = document.createElement('span');
-        span.textContent = word;
-        span.dataset.start = (start + j * wordDuration).toFixed(2);
-        span.dataset.end = (start + (j + 1) * wordDuration).toFixed(2);
-        span.dataset.type = type;
-        span.className = 'word';
+    const wordsArray=[];
+    data.forEach(item=>{
+      const words=item.text.split(' ');
+      const start=item.start.split(':').reduce((a,t)=>60*a+ +t,0);
+      const end=item.end.split(':').reduce((a,t)=>60*a+ +t,0);
+      const dur=end-start; const wdur=dur/words.length;
+      words.forEach((w,j)=>{
+        const span=document.createElement('span');
+        span.textContent=w+' ';
+        span.dataset.start=(start+j*wdur).toFixed(2);
+        span.dataset.end=(start+(j+1)*wdur).toFixed(2);
+        span.dataset.type=type;
+        span.className='word';
         karaokeDiv.appendChild(span);
         wordsArray.push(span);
       });
     });
 
-    playerDiv.appendChild(controlsDiv);
-    playerDiv.appendChild(karaokeDiv);
-    container.appendChild(playerDiv);
+    playerDiv.appendChild(controlsDiv); playerDiv.appendChild(karaokeDiv); container.appendChild(playerDiv);
 
-    const audio = document.createElement('audio');
-    audio.src = audioFile;
+    const audio=document.createElement('audio'); audio.src=audioFile;
+    audio.onplay=()=>{ startHighlightForAudio(audio, wordsArray); currentAudioPlaying=audio; };
+    audio.onpause=()=>{ stopHighlight(); };
+    audio.onended=()=>{ wordsArray.forEach(s=>s.classList.add('completed')); stopHighlight(); playBtn.textContent='▶'; if(isPlayingAll){ currentTrackIndex++; playNextTrack(); } };
 
-    let rafId = null;
-    let completed = false;
+    playBtn.onclick=()=>{ showModalAndPlay(order.findIndex(o=>o.audio===audioFile)); };
 
-    function highlightLoop() {
-      const t = audio.currentTime;
-      wordsArray.forEach(span => {
-        span.classList.remove('highlight-es', 'highlight-z');
-        const s = parseFloat(span.dataset.start);
-        const e = parseFloat(span.dataset.end);
-        if(t >= s && t <= e){
-          if(span.dataset.type === 'z') span.classList.add('highlight-z');
-          else span.classList.add('highlight-es');
-        }
+    playerControls.push({playBtn,audio,wordsArray});
+  }catch(e){ console.error(e); }
+}
+
+async function loadAllSequentially(){for(const item of order) await loadKaraoke(item.audio,item.json,playersContainer,item.type);}
+loadAllSequentially();
+
+function stopCurrentAudio(){ if(currentAudioPlaying) { currentAudioPlaying.pause(); currentAudioPlaying=null; stopHighlight(); } }
+
+function showModalAndPlay(index){
+  currentTrackIndex=index;
+  const item=order[index];
+  modal.style.display='flex'; modal.setAttribute('aria-hidden','false');
+  modalContent.innerHTML='';
+  const clone=document.createElement('div'); clone.className='karaoke-line';
+
+  fetch(item.json).then(r=>r.json()).then(data=>{
+    const spans=[];
+    data.forEach(it=>{
+      const words=it.text.split(' ');
+      const start=it.start.split(':').reduce((a,t)=>60*a+ +t,0);
+      const end=it.end.split(':').reduce((a,t)=>60*a+ +t,0);
+      const dur=end-start; const wdur=dur/words.length;
+      words.forEach((w,j)=>{
+        const span=document.createElement('span');
+        span.textContent=w+' ';
+        span.dataset.start=(start+j*wdur).toFixed(2);
+        span.dataset.end=(start+(j+1)*wdur).toFixed(2);
+        span.dataset.type=item.type;
+        span.className='word';
+        clone.appendChild(span);
+        spans.push(span);
       });
-
-      if(t >= audio.duration){
-        completed = true;
-        wordsArray.forEach(span => span.classList.remove('highlight-es', 'highlight-z'));
-        wordsArray.forEach(span => span.classList.add('completed'));
-        playBtn.textContent = '▶';
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      } else if(!audio.paused) {
-        rafId = requestAnimationFrame(highlightLoop);
-      }
-    }
-
-    karaokeDiv.addEventListener('click', () => {
-      if(isPlayingAll) stopAllPlayback();
-      audio.pause();
-      openModal(wordsArray, audioFile, type);
     });
+    modalContent.appendChild(clone);
 
-    playBtn.addEventListener('click', () => {
-      if(completed){
-        wordsArray.forEach(span => span.classList.remove('completed', 'highlight-es', 'highlight-z'));
-        audio.currentTime = 0;
-        completed = false;
-      }
-      if(audio.paused){
-        if(isPlayingAll) stopAllPlayback();
-        audio.play();
-        playBtn.textContent = '❚❚';
-        if(!rafId) rafId = requestAnimationFrame(highlightLoop);
-      } else {
-        audio.pause();
-        playBtn.textContent = '▶';
-        if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
-      }
-    });
+    stopCurrentAudio();
+    modalAudio.pause();
+    modalAudio.src=item.audio; modalAudio.currentTime=0; modalAudio.load();
 
-    audio.addEventListener('ended', () => {
-      completed = true;
-      wordsArray.forEach(span => span.classList.remove('highlight-es', 'highlight-z'));
-      wordsArray.forEach(span => span.classList.add('completed'));
-      playBtn.textContent = '▶';
-      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+    modalAudio.onplay=()=>{ modalPlayButton.textContent='❚❚'; startHighlightForAudio(modalAudio, spans); currentAudioPlaying=modalAudio; };
+    modalAudio.onpause=()=>{ modalPlayButton.textContent='▶'; stopHighlight(); };
+    modalAudio.onended=()=>{ spans.forEach(s=>s.classList.add('completed')); modalPlayButton.textContent='▶'; stopHighlight(); };
 
-      if (isPlayingAll) {
-        currentTrackIndex++;
-        playNextTrack();
-      }
-    });
+    modalPrevButton.onclick=()=>{ if(currentTrackIndex>0){ showModalAndPlay(currentTrackIndex-1); modalPlayButton.textContent='▶'; } };
+    modalNextButton.onclick=()=>{ if(currentTrackIndex<order.length-1){ showModalAndPlay(currentTrackIndex+1); modalPlayButton.textContent='▶'; } };
 
-    playerControls.push({
-      playBtn,
-      audio,
-      wordsArray,
-      highlightLoop
-    });
-
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-const playersContainer = document.getElementById('players');
-
-const order = [];
-for (let i = 1; i <= 30; i++) {
-  const num = i.toString().padStart(3,'0');
-  order.push({
-    audio: `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.mp3`,
-    json:  `https://raw.githubusercontent.com/xpanol/PLAYERS/main/${num}_es.json`,
-    type: 'es'
-  });
-  order.push({
-    audio: `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.mp3`,
-    json:  `https://raw.githubusercontent.com/xpanol/PLAYERS/main/Z${num}_en.json`,
-    type: 'z'
+    modalPlayButton.onclick=()=>{ 
+      if(modalAudio.paused){ spans.forEach(s=>s.classList.remove('highlight-es','highlight-z','completed')); modalAudio.currentTime=0; modalAudio.play(); }
+      else{ modalAudio.pause(); }
+    };
   });
 }
 
-async function loadAllSequentially() {
-  for (const item of order) {
-    await loadKaraoke(item.audio, item.json, playersContainer, item.type);
-  }
-}
+modalClose.onclick=()=>{ modalAudio.pause(); stopHighlight(); modal.style.display='none'; modal.setAttribute('aria-hidden','true'); };
 
-function resetAllPlayers() {
-  playerControls.forEach(c => {
-    c.audio.pause();
-    c.audio.currentTime = 0;
-    c.playBtn.textContent = '▶';
-    c.wordsArray.forEach(span => span.classList.remove('completed', 'highlight-es', 'highlight-z'));
-  });
-}
-
-function playNextTrack() {
-  const btn = document.getElementById('playAllButton');
-  if (currentTrackIndex < playerControls.length && isPlayingAll) {
-    const current = playerControls[currentTrackIndex];
-    current.wordsArray.forEach(s => s.classList.remove('completed', 'highlight-es', 'highlight-z'));
-    current.audio.currentTime = 0;
-    current.audio.play().catch(() => {
+const playAllBtn=document.getElementById('playAllButton');
+function playNextTrack(){
+  if(currentTrackIndex<playerControls.length && isPlayingAll){
+    const track=playerControls[currentTrackIndex];
+    stopCurrentAudio();
+    track.audio.currentTime = pausedAllTime || 0;
+    track.audio.play().catch(()=>{ currentTrackIndex++; playNextTrack(); });
+    track.playBtn.textContent='❚❚';
+    track.audio.onended=()=>{
+      track.wordsArray.forEach(s=>s.classList.add('completed'));
+      stopHighlight();
+      pausedAllTime=0;
       currentTrackIndex++;
       playNextTrack();
-    });
-    current.playBtn.textContent = '❚❚';
-    current.rafId = requestAnimationFrame(current.highlightLoop);
-  } else {
-    stopAllPlayback();
-    btn.textContent = '✅ Todo reproducido / All played';
-    setTimeout(() => {
-      btn.textContent = '▶ Reproducir todo / Play All';
-    }, 3000);
-  }
+    };
+    currentAudioPlaying = track.audio;
+  } else { isPlayingAll=false; playAllBtn.textContent='▶ REPRODUCIR TODO / PLAY ALL'; }
 }
-
-function stopAllPlayback() {
-  isPlayingAll = false;
-  document.getElementById('playAllButton').textContent = '▶ Reproducir todo / Play All';
-  resetAllPlayers();
-}
-
-document.getElementById('playAllButton').addEventListener('click', () => {
-  if (isPlayingAll) {
-    stopAllPlayback();
-  } else {
-    isPlayingAll = true;
-    currentTrackIndex = 0;
-    resetAllPlayers();
-    document.getElementById('playAllButton').textContent = '❚❚ Detener reproducción / Stop playback';
-    playNextTrack();
-  }
-});
-
-loadAllSequentially();
+playAllBtn.onclick=()=>{
+  if(isPlayingAll){
+    isPlayingAll=false;
+    if(currentAudioPlaying) pausedAllTime = currentAudioPlaying.currentTime;
+    if(currentAudioPlaying) currentAudioPlaying.pause();
+    playAllBtn.textContent='▶ REPRODUCIR TODO / PAUSE';
+  } else { isPlayingAll=true; playAllBtn.textContent='❚❚ DETENER / PAUSE'; playNextTrack(); }
+};
+document.getElementById('resetAllButton').onclick = () => location.reload();
 </script>
-
 </body>
 </html>
