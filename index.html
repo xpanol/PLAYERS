@@ -351,6 +351,17 @@ el.pauseStopButton.onclick = ()=>{
 
 /* init */
 el.stopAllButton.hidden=true;
+  document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    if(el.modal.style.display === 'flex'){
+      el.modalClose.click();
+    }
+    if(el.shadowingPause.style.display === 'block'){
+      el.pauseStopButton.click();
+    }
+  }
+});
+
 </script>
 </body>
 </html>
