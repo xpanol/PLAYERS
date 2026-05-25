@@ -1,0 +1,40 @@
+{
+    "metadata": {
+        "module": "Marketing & Business Performance",
+        "version": "2.0.0",
+        "description": "Bilingual ES-EN advanced marketing glossary beautifully structured for the FRASEO application ecosystem.",
+        "supported_modes": ["flashcards", "quiz", "karaoke_boost", "report_analytics"]
+    },
+    "dictionary": [
+        {
+            "id": "MKT-001",
+            "term_es": "El KPI más relevante",
+            "term_en": "The most relevant KPI",
+            "category": "Metrics & Analytics",
+            "concept_es": "El indicador métrico crítico elegido para medir el éxito de una acción específica.",
+            "concept_en": "The critical metric chosen to evaluate the success of a specific business activity.",
+            "synonyms_es": ["Métrica clave", "Indicador de gestión", "Métrica de la estrella polar"],
+            "synonyms_en": ["Core metric", "Primary metric", "Success indicator", "North Star Metric"],
+            "linguistic_note_es": "'Relevante' implica especificidad para la situación actual, no solo importancia general.",
+            "linguistic_note_en": "'KPI' is commonly pronounced letter by letter (/keɪ-piː-aɪ/) in business environments.",
+            "pitfall_es": "Confundir un KPI con una 'Métrica de Vanidad' (como likes o followers) que no impacta el negocio.",
+            "pitfall_en": "Confusing a KPI with a 'Vanity Metric' (like likes or followers) that does not directly drive revenue.",
+            "sentence_match_id": 3
+        },
+        {
+            "id": "MKT-002",
+            "term_es": "La conversión de leads",
+            "term_en": "Lead conversion",
+            "category": "Metrics & Analytics",
+            "concept_es": "El proceso de transformación de un contacto interesado en un cliente potencial cualificado o comprador.",
+            "concept_en": "The process of turning an interested prospect into a qualified lead or paying customer.",
+            "synonyms_es": ["Cierre de contactos", "Embudo de ventas", "Captación final"],
+            "synonyms_en": ["Prospect acquisition", "Pipeline velocity", "Turning intent into revenue"],
+            "linguistic_note_es": "'Lead' es un anglicismo totalmente aceptado y preferido en el marketing hispanohablante.",
+            "linguistic_note_en": "'Conversion' is usually followed by the preposition 'into' when specifying the target outcome.",
+            "pitfall_es": "No diferenciar entre MQL (Marketing Qualified Lead) y SQL (Sales Qualified Lead) al medir la conversión.",
+            "pitfall_en": "Failing to separate MQLs from SQLs, leading to inaccurate sales pipeline forecasting.",
+            "sentence_match_id": 3
+        }
+    ]
+}
